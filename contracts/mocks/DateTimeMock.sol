@@ -1,6 +1,6 @@
 pragma solidity ^0.4.24;
 
-import "../DateTime.sol";
+import "monetha-utility-contracts/contracts/DateTime.sol";
 
 contract DateTimeMock {
     function toDate(uint256 _ts) public pure returns (uint256 year, uint256 month, uint256 day) {
