@@ -6,8 +6,8 @@ import "openzeppelin-solidity/contracts/token/ERC20/ERC20Basic.sol";
 import "openzeppelin-solidity/contracts/token/ERC20/ERC20.sol";
 import "openzeppelin-solidity/contracts/token/ERC20/SafeERC20.sol";
 import "./IMonethaVoucher.sol";
-import "monetha-utility-contracts/Restricted.sol";
-import "monetha-utility-contracts/DateTime.sol";
+import "monetha-utility-contracts/contracts/Restricted.sol";
+import "monetha-utility-contracts/contracts/DateTime.sol";
 import "./ownership/CanReclaimEther.sol";
 import "./ownership/CanReclaimTokens.sol";
 
