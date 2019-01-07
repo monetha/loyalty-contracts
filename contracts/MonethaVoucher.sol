@@ -176,6 +176,10 @@ contract MonethaVoucher is IMonethaVoucher, Restricted, Pausable, IERC20, CanRec
     function applyDiscount(address _for, uint256 _vouchers) external onlyMonetha returns (uint256 amountVouchers, uint256 amountWei) {
         require(_for != address(0), "zero address is not allowed");
         uint256 releasedVouchers = _releaseVouchers(_for, _vouchers);
+        if (releasedVouchers == 0) {
+            return (0,0);
+        }
+        
         uint256 amountToTransfer = _vouchersToWei(releasedVouchers);
 
         require(address(this).balance >= amountToTransfer, "insufficient funds");
