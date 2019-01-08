@@ -17,6 +17,7 @@ contract('MonethaVoucher', function (accounts) {
     const VOUCHER2 = accounts[2];
     const USER = accounts[3];
     const OTHER = accounts[4];
+    const OTHER1 = accounts[5];
 
     const voucherMthRate = 1000000000000000000;
     const mthEthRate = 100000000;
@@ -122,6 +123,18 @@ contract('MonethaVoucher', function (accounts) {
 
         const newUserBalEth = new BigNumber(web3.eth.getBalance(USER));
         newUserBalEth.should.be.bignumber.equal(prevUserBalEth.add(expectedAmountWeiTransferred));
+    });
+
+    it('should not apply discount if vouchers released is 0', async () => {
+        let prevUserBal = await vouchers.balanceOf(OTHER1);
+        const prevUserBalEth = new BigNumber(web3.eth.getBalance(OTHER1));
+        
+        const tx = await vouchers.applyDiscount(OTHER1, 1, {from: VOUCHER2});
+
+        let newUserBalance = await vouchers.balanceOf(OTHER1);
+        newUserBalance.toNumber().should.equal(prevUserBal.toNumber());
+        const newUserBalEth = new BigNumber(web3.eth.getBalance(OTHER1));
+        newUserBalEth.should.be.bignumber.equal(prevUserBalEth);
     });
 
     it('should revert when apply discount is called from other account', async () => {
