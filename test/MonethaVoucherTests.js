@@ -125,7 +125,7 @@ contract('MonethaVoucher', function (accounts) {
         newUserBalEth.should.be.bignumber.equal(prevUserBalEth.add(expectedAmountWeiTransferred));
     });
 
-    it('should apply no discount if vouchers released is 0', async () => {
+    it('should not apply discount if vouchers released is 0', async () => {
         let prevUserBal = await vouchers.balanceOf(OTHER1);
         const prevUserBalEth = new BigNumber(web3.eth.getBalance(OTHER1));
         
