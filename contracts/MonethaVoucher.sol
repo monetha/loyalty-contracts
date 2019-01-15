@@ -337,10 +337,10 @@ contract MonethaVoucher is IMonethaVoucher, Restricted, Pausable, IERC20, CanRec
         uint16 currentHalfYear = _currentHalfYear();
         uint256 released = 0;
         if (currentHalfYear > 0) {
-            released += _releaseVouchers(_from, _value, currentHalfYear - 1);
+            released = released.add(_releaseVouchers(_from, _value, currentHalfYear - 1));
             _value = _value.sub(released);
         }
-        released += _releaseVouchers(_from, _value, currentHalfYear);
+        released = released.add(_releaseVouchers(_from, _value, currentHalfYear));
 
         emit VoucherReleased(_from, released);
 
@@ -402,7 +402,7 @@ contract MonethaVoucher is IMonethaVoucher, Restricted, Pausable, IERC20, CanRec
         uint256 dist = totalDistributedIn[_currentHalfYear];
         if (_currentHalfYear > 0) {
             // include previous half-year
-            dist += totalDistributedIn[_currentHalfYear - 1];
+            dist = dist.add(totalDistributedIn[_currentHalfYear - 1]);
         }
         return dist;
     }
@@ -411,7 +411,7 @@ contract MonethaVoucher is IMonethaVoucher, Restricted, Pausable, IERC20, CanRec
         uint256 balance = distributed[_currentHalfYear][_owner];
         if (_currentHalfYear > 0) {
             // include previous half-year
-            balance += distributed[_currentHalfYear - 1][_owner];
+            balance = balance.add(distributed[_currentHalfYear - 1][_owner]);
         }
         return balance;
     }
