@@ -1,0 +1,95 @@
+@startuml
+hide empty description
+
+[*] --> AwaitingAcceptance : create()
+note bottom on link
+called by: requester
+requester:
+  - stakes MTH
+respondent:
+  - looses reputation points
+event:
+  - ClaimCreated (dealId, claimIdx)
+end note
+AwaitingAcceptance : deal Id set
+AwaitingAcceptance : reason note set
+AwaitingAcceptance : requester Id set
+AwaitingAcceptance : requester address set
+AwaitingAcceptance : requester staked amount set
+AwaitingAcceptance : respondent Id set
+
+AwaitingAcceptance --> AwaitingAcceptanceExpired : after 72h.
+AwaitingAcceptanceExpired --> ClosedAfterAcceptanceExpired : close()
+note bottom on link
+called by: requester
+requester:
+  - gets staked MTH back
+event:
+  - ClaimClosedAfterAcceptanceExpired (dealId, claimIdx)
+end note
+
+ClosedAfterAcceptanceExpired --> [*]
+
+
+AwaitingAcceptance --> AwaitingResolution : accept()
+note bottom on link
+called by: respondent
+respondent:
+  - stakes MTH
+event:
+  - ClaimAccepted (dealId, claimIdx)
+end note
+AwaitingResolution : respondent address set
+AwaitingResolution : respondent staked amount set
+
+AwaitingResolution --> AwaitingResolutionExpired : after 72h.
+AwaitingResolutionExpired --> ClosedAfterResolutionExpired : close()
+note bottom on link
+called by: requester/respondent
+requester:
+  - gets staked MTH back
+  - gets staked MTH of respondent
+respondent:
+  - looses staked MTH
+event:
+  - ClaimClosedAfterResolutionExpired (dealId, claimIdx)
+end note
+
+ClosedAfterResolutionExpired --> [*]
+
+AwaitingResolution --> AwaitingConfirmation: resolve()
+note bottom on link
+called by: respondent
+respondent:
+  - gets staked MTH back
+  - restores reputation points
+event:
+  - ClaimResolved (dealId, claimIdx)
+end note
+AwaitingConfirmation: resolution note set
+
+AwaitingConfirmation --> AwaitingConfirmationExpired : after 24h.
+AwaitingConfirmationExpired --> ClosedAfterConfirmationExpired : close()
+note bottom on link
+called by: requester
+requester:
+  - gets staked MTH back
+event:
+  - ClaimClosedAfterConfirmationExpired (dealId, claimIdx)
+end note
+
+ClosedAfterConfirmationExpired --> [*]
+
+AwaitingConfirmation --> Closed : close()
+note bottom on link
+called by: requester
+requester:
+  - gets staked MTH back
+  - gets reputation points
+event:
+  - ClaimClosed (dealId, claimIdx)
+end note
+
+Closed --> [*]
+
+@enduml
