@@ -2,7 +2,7 @@
 hide empty description
 
 [*] --> AwaitingAcceptance : create()
-note bottom on link
+note right on link
 called by: requester
 requester:
   - stakes MTH
@@ -18,9 +18,8 @@ AwaitingAcceptance : requester address set
 AwaitingAcceptance : requester staked amount set
 AwaitingAcceptance : respondent Id set
 
-AwaitingAcceptance --> AwaitingAcceptanceExpired : after 72h.
-AwaitingAcceptanceExpired --> ClosedAfterAcceptanceExpired : close()
-note bottom on link
+AwaitingAcceptance --> ClosedAfterAcceptanceExpired : close() after 72h.
+note right on link
 called by: requester
 requester:
   - gets staked MTH back
@@ -32,7 +31,7 @@ ClosedAfterAcceptanceExpired --> [*]
 
 
 AwaitingAcceptance --> AwaitingResolution : accept()
-note bottom on link
+note right on link
 called by: respondent
 respondent:
   - stakes MTH
@@ -42,9 +41,8 @@ end note
 AwaitingResolution : respondent address set
 AwaitingResolution : respondent staked amount set
 
-AwaitingResolution --> AwaitingResolutionExpired : after 72h.
-AwaitingResolutionExpired --> ClosedAfterResolutionExpired : close()
-note bottom on link
+AwaitingResolution --> ClosedAfterResolutionExpired : close() after 72h.
+note right on link
 called by: requester/respondent
 requester:
   - gets staked MTH back
@@ -58,7 +56,7 @@ end note
 ClosedAfterResolutionExpired --> [*]
 
 AwaitingResolution --> AwaitingConfirmation: resolve()
-note bottom on link
+note right on link
 called by: respondent
 respondent:
   - gets staked MTH back
@@ -68,9 +66,8 @@ event:
 end note
 AwaitingConfirmation: resolution note set
 
-AwaitingConfirmation --> AwaitingConfirmationExpired : after 24h.
-AwaitingConfirmationExpired --> ClosedAfterConfirmationExpired : close()
-note bottom on link
+AwaitingConfirmation --> ClosedAfterConfirmationExpired : close() after 24h.
+note right on link
 called by: requester
 requester:
   - gets staked MTH back
@@ -81,7 +78,7 @@ end note
 ClosedAfterConfirmationExpired --> [*]
 
 AwaitingConfirmation --> Closed : close()
-note bottom on link
+note right on link
 called by: requester
 requester:
   - gets staked MTH back
