@@ -200,6 +200,10 @@ contract MonethaClaimHandler is Restricted, Pausable, CanReclaimEther, CanReclai
         }
     }
 
+    function setMinStake(uint256 _newMinStake) external whenNotPaused onlyMonetha {
+        _setMinStake(_newMinStake);
+    }
+
     function _hoursPassed(uint256 start, uint256 hoursAfter) internal view returns (bool) {
         return now >= start + hoursAfter * 1 hours;
     }
