@@ -59,8 +59,12 @@ contract MonethaClaimHandler is Restricted, Pausable, CanReclaimEther, CanReclai
         _setMinStake(_minStake);
     }
 
+    function getClaimsCount() public constant returns (uint256 count) {
+        return claims.length;
+    }
+
     function create(
-        uint256 dealId,
+        uint256 _dealId,
         string _reasonNote,
         string _requesterId,
         string _respondentId
@@ -76,7 +80,7 @@ contract MonethaClaimHandler is Restricted, Pausable, CanReclaimEther, CanReclai
         Claim memory claim = Claim({
             state : State.AwaitingAcceptance,
             timestamp : now,
-            dealId : dealId,
+            dealId : _dealId,
             reasonNote : _reasonNote,
             requesterId : _requesterId,
             requesterAddress : msg.sender,
@@ -88,10 +92,11 @@ contract MonethaClaimHandler is Restricted, Pausable, CanReclaimEther, CanReclai
             });
         claims.push(claim);
 
-        emit ClaimCreated(dealId, claims.length - 1);
+        emit ClaimCreated(_dealId, claims.length - 1);
     }
 
     function accept(uint256 _claimIdx) external whenNotPaused {
+        require(_claimIdx < claims.length, "invalid claim index");
         Claim storage claim = claims[_claimIdx];
         require(State.AwaitingAcceptance == claim.state, "State.AwaitingAcceptance required");
         require(msg.sender != claim.requesterAddress, "requester and respondent addresses must be different");
@@ -107,6 +112,7 @@ contract MonethaClaimHandler is Restricted, Pausable, CanReclaimEther, CanReclai
     }
 
     function resolve(uint256 _claimIdx, string _resolutionNote) external whenNotPaused {
+        require(_claimIdx < claims.length, "invalid claim index");
         Claim storage claim = claims[_claimIdx];
         require(State.AwaitingResolution == claim.state, "State.AwaitingResolution required");
         require(msg.sender == claim.respondentAddress, "awaiting respondent");
@@ -119,6 +125,7 @@ contract MonethaClaimHandler is Restricted, Pausable, CanReclaimEther, CanReclai
     }
 
     function close(uint256 _claimIdx) external whenNotPaused {
+        require(_claimIdx < claims.length, "invalid claim index");
         State state = claims[_claimIdx].state;
 
         if (State.AwaitingAcceptance == state) {
