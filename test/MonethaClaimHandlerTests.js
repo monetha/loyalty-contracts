@@ -1,7 +1,7 @@
 import {advanceBlock} from "./helpers/advanceToBlock";
 import Revert from "./helpers/VMExceptionRevert";
 
-import {duration, increaseTimeTo} from "./helpers/increaseTime";
+import increaseTime, {duration} from "./helpers/increaseTime";
 
 const {shouldBehaveLikeCanReclaimEther} = require('./CanReclaimEther.behavior');
 const {shouldBehaveLikeCanReclaimTokens} = require('./CanReclaimTokens.behavior');
@@ -31,6 +31,18 @@ contract('MonethaClaimHandler', function (accounts) {
     const StateClosedAfterConfirmationExpired = 6;
     const StateClosed = 7;
 
+    const stateField = 0;
+    const timestampField = 1;
+    const dealIdField = 2;
+    const reasonNoteField = 3;
+    const requesterIdField = 4;
+    const requesterAddressField = 5;
+    const requesterStakedField = 6;
+    const respondentIdField = 7;
+    const respondentAddressField = 8;
+    const respondentStakedField = 9;
+    const resolutionNoteField = 10;
+
     let token;
     let claimHandler;
 
@@ -52,7 +64,7 @@ contract('MonethaClaimHandler', function (accounts) {
         this.token = token;
     });
 
-    it('should be able to create new claim', async () => {
+    it('should allow requester to create new claim', async () => {
         // arrange
         const dealID = 1234;
         const reasonNote = "reason note";
@@ -87,31 +99,92 @@ contract('MonethaClaimHandler', function (accounts) {
         claimHandlerBalance2.should.be.bignumber.equal(claimHandlerBalance.add(MIN_STAKE));
 
         // claim state
-        const [
-            claimState,
-            claimTimestamp,
-            claimDealId,
-            claimReasonNote,
-            claimRequesterId,
-            claimRequesterAddress,
-            claimRequesterStaked,
-            claimRespondentId,
-            claimRespondentAddress,
-            claimRespondentStaked,
-            claimResolutionNote,
-        ] = await claimHandler.claims(count);
+        const claim = await claimHandler.claims(count);
 
-        claimState.should.be.bignumber.equal(StateAwaitingAcceptance);
-        claimTimestamp.should.be.bignumber.equal(txTimestamp);
-        claimDealId.should.be.bignumber.equal(dealID);
-        assert.equal(claimReasonNote, reasonNote);
-        assert.equal(claimRequesterId, requesterId);
-        assert.equal(claimRequesterAddress, REQUESTER);
-        claimRequesterStaked.should.be.bignumber.equal(MIN_STAKE);
-        assert.equal(claimRespondentId, respondentId);
-        assert.equal(claimRespondentAddress, 0x0);
-        claimRespondentStaked.should.be.bignumber.equal(0);
-        assert.equal(claimResolutionNote, "");
+        claim[stateField].should.be.bignumber.equal(StateAwaitingAcceptance);
+        claim[timestampField].should.be.bignumber.equal(txTimestamp);
+        claim[dealIdField].should.be.bignumber.equal(dealID);
+        assert.equal(claim[reasonNoteField], reasonNote);
+        assert.equal(claim[requesterIdField], requesterId);
+        assert.equal(claim[requesterAddressField], REQUESTER);
+        claim[requesterStakedField].should.be.bignumber.equal(MIN_STAKE);
+        assert.equal(claim[respondentIdField], respondentId);
+        assert.equal(claim[respondentAddressField], 0x0);
+        claim[respondentStakedField].should.be.bignumber.equal(0);
+        assert.equal(claim[resolutionNoteField], "");
+    });
+
+    it('should not allow requester to close the claim within 72 hours after creation', async () => {
+        // arrange
+        const dealID = 1234;
+        const reasonNote = "reason note";
+        const requesterId = "requester id";
+        const respondentId = "respondent id";
+
+        await token.approve(claimHandler.address, MIN_STAKE, {from: REQUESTER});
+
+        const claimId = new BigNumber(await claimHandler.getClaimsCount());
+        await claimHandler.create(dealID, reasonNote, requesterId, respondentId, {from: REQUESTER});
+
+        // act
+        await claimHandler.close(claimId, {from: REQUESTER}).should.be.rejectedWith(Revert);
+
+        await increaseTime(duration.hours(71) + duration.minutes(59));
+
+        await claimHandler.close(claimId, {from: REQUESTER}).should.be.rejectedWith(Revert);
+
+        // assert
+    });
+
+    it('should allow requester to close the claim 72 hours after creation', async () => {
+        // arrange
+        const dealID = 1234;
+        const reasonNote = "reason note";
+        const requesterId = "requester id";
+        const respondentId = "respondent id";
+
+        await token.approve(claimHandler.address, MIN_STAKE, {from: REQUESTER});
+
+        const claimId = new BigNumber(await claimHandler.getClaimsCount());
+        await claimHandler.create(dealID, reasonNote, requesterId, respondentId, {from: REQUESTER});
+
+        await increaseTime(duration.hours(72));
+
+        const requesterBalance = new BigNumber(await token.balanceOf(REQUESTER));
+        const claimHandlerBalance = new BigNumber(await token.balanceOf(claimHandler.address));
+
+        // act
+        const tx = await claimHandler.close(claimId, {from: REQUESTER});
+        const txTimestamp = web3.eth.getBlock(tx.receipt.blockNumber).timestamp;
+
+        // assert
+
+        // event emitted
+        expectEvent.inLogs(tx.logs, "ClaimClosedAfterAcceptanceExpired", {
+            dealId: dealID,
+            claimIdx: claimId,
+        });
+
+        // MTH staked
+        const requesterBalance2 = new BigNumber(await token.balanceOf(REQUESTER));
+        requesterBalance2.should.be.bignumber.equal(requesterBalance.add(MIN_STAKE));
+        const claimHandlerBalance2 = new BigNumber(await token.balanceOf(claimHandler.address));
+        claimHandlerBalance2.should.be.bignumber.equal(claimHandlerBalance.sub(MIN_STAKE));
+
+        // claim state
+        const claim = await claimHandler.claims(claimId);
+
+        claim[stateField].should.be.bignumber.equal(StateClosedAfterAcceptanceExpired);
+        claim[timestampField].should.be.bignumber.equal(txTimestamp);
+        claim[dealIdField].should.be.bignumber.equal(dealID);
+        assert.equal(claim[reasonNoteField], reasonNote);
+        assert.equal(claim[requesterIdField], requesterId);
+        assert.equal(claim[requesterAddressField], REQUESTER);
+        claim[requesterStakedField].should.be.bignumber.equal(0);
+        assert.equal(claim[respondentIdField], respondentId);
+        assert.equal(claim[respondentAddressField], 0x0);
+        claim[respondentStakedField].should.be.bignumber.equal(0);
+        assert.equal(claim[resolutionNoteField], "");
     });
 
     shouldBehaveLikeCanReclaimEther(OTHER);

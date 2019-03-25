@@ -129,11 +129,11 @@ contract MonethaClaimHandler is Restricted, Pausable, CanReclaimEther, CanReclai
         State state = claims[_claimIdx].state;
 
         if (State.AwaitingAcceptance == state) {
-            _closeAfterAwaitingAcceptance(_claimIdx);
+            return _closeAfterAwaitingAcceptance(_claimIdx);
         } else if (State.AwaitingResolution == state) {
-            _closeAfterAwaitingResolution(_claimIdx);
+            return _closeAfterAwaitingResolution(_claimIdx);
         } else if (State.AwaitingConfirmation == state) {
-            _closeAfterAwaitingConfirmation(_claimIdx);
+            return _closeAfterAwaitingConfirmation(_claimIdx);
         }
 
         revert("claim.State");
