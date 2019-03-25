@@ -8,6 +8,11 @@ import "monetha-utility-contracts/contracts/Restricted.sol";
 import "./ownership/CanReclaimEther.sol";
 import "./ownership/CanReclaimTokens.sol";
 
+/**
+ *  @title MonethaClaimHandler
+ *
+ *  MonethaClaimHandler handles claim creation, acceptance, resolution and confirmation.
+ */
 contract MonethaClaimHandler is Restricted, Pausable, CanReclaimEther, CanReclaimTokens {
     using SafeERC20 for ERC20;
     using SafeERC20 for ERC20Basic;
@@ -22,9 +27,10 @@ contract MonethaClaimHandler is Restricted, Pausable, CanReclaimEther, CanReclai
     event ClaimClosedAfterConfirmationExpired(uint256 indexed dealId, uint256 indexed claimIdx);
     event ClaimClosed(uint256 indexed dealId, uint256 indexed claimIdx);
 
-    ERC20 public mthToken;
-    uint256 public minStake;
+    ERC20 public mthToken;   // MTH token contract address
+    uint256 public minStake; // minimum amount of MTH to create and accept claim
 
+    // State of claim
     enum State {
         Null,
         AwaitingAcceptance,
@@ -59,10 +65,28 @@ contract MonethaClaimHandler is Restricted, Pausable, CanReclaimEther, CanReclai
         _setMinStake(_minStake);
     }
 
+    /**
+     * @dev sets the minimum amount of MTH tokens to stake when creating or accepting the claim.
+     * Only Monetha account allowed to call this method.
+     */
+    function setMinStake(uint256 _newMinStake) external whenNotPaused onlyMonetha {
+        _setMinStake(_newMinStake);
+    }
+
+    /**
+     * @dev returns the number of claims created.
+     */
     function getClaimsCount() public constant returns (uint256 count) {
         return claims.length;
     }
 
+    /**
+    * @dev creates new claim using provided parameters. Before calling this method, requester should approve
+    * this contract to transfer min. amount of MTH tokens in their behalf, by calling
+    * `approve(address _spender, uint _value)` method of MTH token contract.
+    * Respondent should accept the claim by calling accept() method.
+    * claimIdx should be extracted from ClaimCreated event.
+    */
     function create(
         uint256 _dealId,
         string _reasonNote,
@@ -95,6 +119,11 @@ contract MonethaClaimHandler is Restricted, Pausable, CanReclaimEther, CanReclai
         emit ClaimCreated(_dealId, claims.length - 1);
     }
 
+    /**
+     * @dev accepts the claim by respondent. Before calling this method, respondent should approve
+     * this contract to transfer min. amount of MTH tokens in their behalf, by calling
+     * `approve(address _spender, uint _value)` method of MTH token contract.
+     */
     function accept(uint256 _claimIdx) external whenNotPaused {
         require(_claimIdx < claims.length, "invalid claim index");
         Claim storage claim = claims[_claimIdx];
@@ -111,6 +140,9 @@ contract MonethaClaimHandler is Restricted, Pausable, CanReclaimEther, CanReclai
         emit ClaimAccepted(claim.dealId, _claimIdx);
     }
 
+    /**
+     * @dev resolves the claim by respondent. Respondent will get staked amount of MTH tokens back.
+     */
     function resolve(uint256 _claimIdx, string _resolutionNote) external whenNotPaused {
         require(_claimIdx < claims.length, "invalid claim index");
         Claim storage claim = claims[_claimIdx];
@@ -131,6 +163,12 @@ contract MonethaClaimHandler is Restricted, Pausable, CanReclaimEther, CanReclai
         emit ClaimResolved(claim.dealId, _claimIdx);
     }
 
+    /**
+     * @dev closes the claim by requester.
+     * Requester allowed to call this method 72 hours after call to create() or accept(), and immediately after resolve().
+     * Requester will get staked amount of MTH tokens back. Requester will also get the respondent’s MTH tokens if
+     * the respondent did not call the resolve() method within 72 hours.
+     */
     function close(uint256 _claimIdx) external whenNotPaused {
         require(_claimIdx < claims.length, "invalid claim index");
         State state = claims[_claimIdx].state;
@@ -212,10 +250,6 @@ contract MonethaClaimHandler is Restricted, Pausable, CanReclaimEther, CanReclai
         } else {
             emit ClaimClosed(claim.dealId, _claimIdx);
         }
-    }
-
-    function setMinStake(uint256 _newMinStake) external whenNotPaused onlyMonetha {
-        _setMinStake(_newMinStake);
     }
 
     function _hoursPassed(uint256 start, uint256 hoursAfter) internal view returns (bool) {
