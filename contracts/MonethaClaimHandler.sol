@@ -168,7 +168,7 @@ contract MonethaClaimHandler is Restricted, Pausable, CanReclaimEther, CanReclai
         Claim storage claim = claims[_claimIdx];
         require(State.AwaitingResolution == claim.state, "State.AwaitingResolution required");
         require(_hoursPassed(claim.timestamp, 72), "expiration required");
-        require(msg.sender == claim.requesterAddress || msg.sender == claim.respondentAddress, "awaiting requester or respondent");
+        require(msg.sender == claim.requesterAddress, "awaiting requester");
 
         uint256 reqStakedBefore = claim.requesterStaked;
         uint256 respStakedBefore = claim.respondentStaked;

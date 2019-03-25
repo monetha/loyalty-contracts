@@ -42,7 +42,7 @@ AwaitingResolution : respondent staked amount set
 
 AwaitingResolution --> ClosedAfterResolutionExpired : close() after 72h.
 note right on link
-called by: requester/respondent
+called by: requester
 requester:
   - gets staked MTH back
   - gets staked MTH of respondent

@@ -136,7 +136,7 @@ contract('MonethaClaimHandler', function (accounts) {
         // assert
     });
 
-    it('should allow requester to close the claim 72 hours after creation', async () => {
+    it('should allow only requester to close the claim 72 hours after creation', async () => {
         // arrange
         const dealID = 1234;
         const reasonNote = "reason note";
@@ -154,6 +154,11 @@ contract('MonethaClaimHandler', function (accounts) {
         const claimHandlerBalance = new BigNumber(await token.balanceOf(claimHandler.address));
 
         // act
+        await claimHandler.close(claimId, {from: RESPONDENT}).should.be.rejectedWith(Revert);
+        await claimHandler.close(claimId, {from: OTHER}).should.be.rejectedWith(Revert);
+        await claimHandler.close(claimId, {from: OWNER}).should.be.rejectedWith(Revert);
+        await claimHandler.close(claimId, {from: MONETHA_ACCOUNT}).should.be.rejectedWith(Revert);
+
         const tx = await claimHandler.close(claimId, {from: REQUESTER});
         const txTimestamp = web3.eth.getBlock(tx.receipt.blockNumber).timestamp;
 
@@ -187,7 +192,7 @@ contract('MonethaClaimHandler', function (accounts) {
         assert.equal(claim[FieldResolutionNote], "");
     });
 
-    it('should allow respondent to accept the claim after creation', async () => {
+    it('should allow respondent, but not the requester to accept the claim after creation', async () => {
         // arrange
         const dealID = 1234;
         const reasonNote = "reason note";
@@ -204,6 +209,9 @@ contract('MonethaClaimHandler', function (accounts) {
         const claimHandlerBalance = new BigNumber(await token.balanceOf(claimHandler.address));
 
         // act
+        await token.approve(claimHandler.address, MIN_STAKE, {from: REQUESTER});
+        await claimHandler.accept(claimId, {from: REQUESTER}).should.be.rejectedWith(Revert);
+
         await token.approve(claimHandler.address, MIN_STAKE, {from: RESPONDENT});
         const tx = await claimHandler.accept(claimId, {from: RESPONDENT});
         const txTimestamp = web3.eth.getBlock(tx.receipt.blockNumber).timestamp;
@@ -263,7 +271,7 @@ contract('MonethaClaimHandler', function (accounts) {
         // assert
     });
 
-    it('should allow requester to close the claim 72 hours after acceptance', async () => {
+    it('should allow only requester to close the claim 72 hours after acceptance', async () => {
         // arrange
         const dealID = 1234;
         const reasonNote = "reason note";
@@ -285,6 +293,11 @@ contract('MonethaClaimHandler', function (accounts) {
         const claimHandlerBalance = new BigNumber(await token.balanceOf(claimHandler.address));
 
         // act
+        await claimHandler.close(claimId, {from: RESPONDENT}).should.be.rejectedWith(Revert);
+        await claimHandler.close(claimId, {from: OTHER}).should.be.rejectedWith(Revert);
+        await claimHandler.close(claimId, {from: OWNER}).should.be.rejectedWith(Revert);
+        await claimHandler.close(claimId, {from: MONETHA_ACCOUNT}).should.be.rejectedWith(Revert);
+
         const tx = await claimHandler.close(claimId, {from: REQUESTER});
         const txTimestamp = web3.eth.getBlock(tx.receipt.blockNumber).timestamp;
 
@@ -320,7 +333,7 @@ contract('MonethaClaimHandler', function (accounts) {
         assert.equal(claim[FieldResolutionNote], "");
     });
 
-    it('should allow respondent to resolve claim after acceptance', async () => {
+    it('should allow only respondent to resolve claim after acceptance', async () => {
         // arrange
         const dealID = 1234;
         const reasonNote = "reason note";
@@ -341,6 +354,11 @@ contract('MonethaClaimHandler', function (accounts) {
         const claimHandlerBalance = new BigNumber(await token.balanceOf(claimHandler.address));
 
         // act
+        await claimHandler.resolve(claimId, resolutionNote, {from: REQUESTER}).should.be.rejectedWith(Revert);
+        await claimHandler.resolve(claimId, resolutionNote, {from: OTHER}).should.be.rejectedWith(Revert);
+        await claimHandler.resolve(claimId, resolutionNote, {from: OWNER}).should.be.rejectedWith(Revert);
+        await claimHandler.resolve(claimId, resolutionNote, {from: MONETHA_ACCOUNT}).should.be.rejectedWith(Revert);
+
         const tx = await claimHandler.resolve(claimId, resolutionNote, {from: RESPONDENT});
         const txTimestamp = web3.eth.getBlock(tx.receipt.blockNumber).timestamp;
 
@@ -376,7 +394,7 @@ contract('MonethaClaimHandler', function (accounts) {
         assert.equal(claim[FieldResolutionNote], resolutionNote);
     });
 
-    it('should allow requester to close claim within 24 hours after resolution with Closed state', async () => {
+    it('should allow only requester to close claim within 24 hours after resolution with Closed state', async () => {
         // arrange
         const dealID = 1234;
         const reasonNote = "reason note";
@@ -400,6 +418,10 @@ contract('MonethaClaimHandler', function (accounts) {
         const claimHandlerBalance = new BigNumber(await token.balanceOf(claimHandler.address));
 
         // act
+        await claimHandler.close(claimId, {from: RESPONDENT}).should.be.rejectedWith(Revert);
+        await claimHandler.close(claimId, {from: OTHER}).should.be.rejectedWith(Revert);
+        await claimHandler.close(claimId, {from: OWNER}).should.be.rejectedWith(Revert);
+        await claimHandler.close(claimId, {from: MONETHA_ACCOUNT}).should.be.rejectedWith(Revert);
 
         const tx = await claimHandler.close(claimId, {from: REQUESTER});
         const txTimestamp = web3.eth.getBlock(tx.receipt.blockNumber).timestamp;
@@ -434,7 +456,7 @@ contract('MonethaClaimHandler', function (accounts) {
         assert.equal(claim[FieldResolutionNote], resolutionNote);
     });
 
-    it('should allow requester to close claim 24 hours after resolution with ClosedAfterConfirmationExpired state', async () => {
+    it('should allow only requester to close claim 24 hours after resolution with ClosedAfterConfirmationExpired state', async () => {
         // arrange
         const dealID = 1234;
         const reasonNote = "reason note";
@@ -458,7 +480,11 @@ contract('MonethaClaimHandler', function (accounts) {
         const claimHandlerBalance = new BigNumber(await token.balanceOf(claimHandler.address));
 
         // act
-
+        await claimHandler.close(claimId, {from: RESPONDENT}).should.be.rejectedWith(Revert);
+        await claimHandler.close(claimId, {from: OTHER}).should.be.rejectedWith(Revert);
+        await claimHandler.close(claimId, {from: OWNER}).should.be.rejectedWith(Revert);
+        await claimHandler.close(claimId, {from: MONETHA_ACCOUNT}).should.be.rejectedWith(Revert);
+        
         const tx = await claimHandler.close(claimId, {from: REQUESTER});
         const txTimestamp = web3.eth.getBlock(tx.receipt.blockNumber).timestamp;
 
