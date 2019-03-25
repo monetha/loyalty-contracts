@@ -187,7 +187,7 @@ contract('MonethaClaimHandler', function (accounts) {
         assert.equal(claim[FieldResolutionNote], "");
     });
 
-    it('should allow respondent to accept the claim within 72 hours after creation', async () => {
+    it('should allow respondent to accept the claim after creation', async () => {
         // arrange
         const dealID = 1234;
         const reasonNote = "reason note";
