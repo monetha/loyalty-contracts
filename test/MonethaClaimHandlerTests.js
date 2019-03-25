@@ -31,17 +31,17 @@ contract('MonethaClaimHandler', function (accounts) {
     const StateClosedAfterConfirmationExpired = 6;
     const StateClosed = 7;
 
-    const stateField = 0;
-    const timestampField = 1;
-    const dealIdField = 2;
-    const reasonNoteField = 3;
-    const requesterIdField = 4;
-    const requesterAddressField = 5;
-    const requesterStakedField = 6;
-    const respondentIdField = 7;
-    const respondentAddressField = 8;
-    const respondentStakedField = 9;
-    const resolutionNoteField = 10;
+    const FieldState = 0;
+    const FieldTimestamp = 1;
+    const FieldDealId = 2;
+    const FieldReasonNote = 3;
+    const FieldRequesterId = 4;
+    const FieldRequesterAddress = 5;
+    const FieldRequesterStaked = 6;
+    const FieldRespondentId = 7;
+    const FieldRespondentAddress = 8;
+    const FieldRespondentStaked = 9;
+    const FieldResolutionNote = 10;
 
     let token;
     let claimHandler;
@@ -101,17 +101,17 @@ contract('MonethaClaimHandler', function (accounts) {
         // claim state
         const claim = await claimHandler.claims(count);
 
-        claim[stateField].should.be.bignumber.equal(StateAwaitingAcceptance);
-        claim[timestampField].should.be.bignumber.equal(txTimestamp);
-        claim[dealIdField].should.be.bignumber.equal(dealID);
-        assert.equal(claim[reasonNoteField], reasonNote);
-        assert.equal(claim[requesterIdField], requesterId);
-        assert.equal(claim[requesterAddressField], REQUESTER);
-        claim[requesterStakedField].should.be.bignumber.equal(MIN_STAKE);
-        assert.equal(claim[respondentIdField], respondentId);
-        assert.equal(claim[respondentAddressField], 0x0);
-        claim[respondentStakedField].should.be.bignumber.equal(0);
-        assert.equal(claim[resolutionNoteField], "");
+        claim[FieldState].should.be.bignumber.equal(StateAwaitingAcceptance);
+        claim[FieldTimestamp].should.be.bignumber.equal(txTimestamp);
+        claim[FieldDealId].should.be.bignumber.equal(dealID);
+        assert.equal(claim[FieldReasonNote], reasonNote);
+        assert.equal(claim[FieldRequesterId], requesterId);
+        assert.equal(claim[FieldRequesterAddress], REQUESTER);
+        claim[FieldRequesterStaked].should.be.bignumber.equal(MIN_STAKE);
+        assert.equal(claim[FieldRespondentId], respondentId);
+        assert.equal(claim[FieldRespondentAddress], 0x0);
+        claim[FieldRespondentStaked].should.be.bignumber.equal(0);
+        assert.equal(claim[FieldResolutionNote], "");
     });
 
     it('should not allow requester to close the claim within 72 hours after creation', async () => {
@@ -174,17 +174,17 @@ contract('MonethaClaimHandler', function (accounts) {
         // claim state
         const claim = await claimHandler.claims(claimId);
 
-        claim[stateField].should.be.bignumber.equal(StateClosedAfterAcceptanceExpired);
-        claim[timestampField].should.be.bignumber.equal(txTimestamp);
-        claim[dealIdField].should.be.bignumber.equal(dealID);
-        assert.equal(claim[reasonNoteField], reasonNote);
-        assert.equal(claim[requesterIdField], requesterId);
-        assert.equal(claim[requesterAddressField], REQUESTER);
-        claim[requesterStakedField].should.be.bignumber.equal(0);
-        assert.equal(claim[respondentIdField], respondentId);
-        assert.equal(claim[respondentAddressField], 0x0);
-        claim[respondentStakedField].should.be.bignumber.equal(0);
-        assert.equal(claim[resolutionNoteField], "");
+        claim[FieldState].should.be.bignumber.equal(StateClosedAfterAcceptanceExpired);
+        claim[FieldTimestamp].should.be.bignumber.equal(txTimestamp);
+        claim[FieldDealId].should.be.bignumber.equal(dealID);
+        assert.equal(claim[FieldReasonNote], reasonNote);
+        assert.equal(claim[FieldRequesterId], requesterId);
+        assert.equal(claim[FieldRequesterAddress], REQUESTER);
+        claim[FieldRequesterStaked].should.be.bignumber.equal(0);
+        assert.equal(claim[FieldRespondentId], respondentId);
+        assert.equal(claim[FieldRespondentAddress], 0x0);
+        claim[FieldRespondentStaked].should.be.bignumber.equal(0);
+        assert.equal(claim[FieldResolutionNote], "");
     });
 
     shouldBehaveLikeCanReclaimEther(OTHER);
