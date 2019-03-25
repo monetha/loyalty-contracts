@@ -117,9 +117,16 @@ contract MonethaClaimHandler is Restricted, Pausable, CanReclaimEther, CanReclai
         require(State.AwaitingResolution == claim.state, "State.AwaitingResolution required");
         require(msg.sender == claim.respondentAddress, "awaiting respondent");
 
+        uint256 respStakedBefore = claim.respondentStaked;
+
         claim.state = State.AwaitingConfirmation;
         claim.timestamp = now;
+        claim.respondentStaked = 0;
         claim.resolutionNote = _resolutionNote;
+
+        if (respStakedBefore > 0) {
+            mthToken.safeTransfer(msg.sender, respStakedBefore);
+        }
 
         emit ClaimResolved(claim.dealId, _claimIdx);
     }
