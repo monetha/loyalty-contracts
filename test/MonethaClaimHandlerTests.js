@@ -484,7 +484,7 @@ contract('MonethaClaimHandler', function (accounts) {
         await claimHandler.close(claimId, {from: OTHER}).should.be.rejectedWith(Revert);
         await claimHandler.close(claimId, {from: OWNER}).should.be.rejectedWith(Revert);
         await claimHandler.close(claimId, {from: MONETHA_ACCOUNT}).should.be.rejectedWith(Revert);
-        
+
         const tx = await claimHandler.close(claimId, {from: REQUESTER});
         const txTimestamp = web3.eth.getBlock(tx.receipt.blockNumber).timestamp;
 
@@ -516,6 +516,34 @@ contract('MonethaClaimHandler', function (accounts) {
         assert.equal(claim[FieldRespondentAddress], RESPONDENT);
         claim[FieldRespondentStaked].should.be.bignumber.equal(0);
         assert.equal(claim[FieldResolutionNote], resolutionNote);
+    });
+
+    it('should allow only Monetha account to set minimum stake amount', async () => {
+        // arrange
+        const minStake = await claimHandler.minStake();
+        const newMinStake = minStake.mul(2);
+
+        // act
+        await claimHandler.setMinStake(newMinStake, {from: REQUESTER}).should.be.rejectedWith(Revert);
+        await claimHandler.setMinStake(newMinStake, {from: RESPONDENT}).should.be.rejectedWith(Revert);
+        await claimHandler.setMinStake(newMinStake, {from: OTHER}).should.be.rejectedWith(Revert);
+
+        const tx = await claimHandler.setMinStake(newMinStake, {from: MONETHA_ACCOUNT});
+
+        // assert
+
+        // event emitted
+        expectEvent.inLogs(tx.logs, "MinStakeUpdated", {
+            previousMinStake: minStake,
+            newMinStake: newMinStake,
+        });
+
+        // check value
+        const minStake2 = await claimHandler.minStake();
+        minStake2.should.be.bignumber.equal(newMinStake);
+
+        // restore
+        await claimHandler.setMinStake(minStake, {from: MONETHA_ACCOUNT});
     });
 
     shouldBehaveLikeCanReclaimEther(OTHER);
