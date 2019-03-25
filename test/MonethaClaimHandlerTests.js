@@ -187,6 +187,57 @@ contract('MonethaClaimHandler', function (accounts) {
         assert.equal(claim[FieldResolutionNote], "");
     });
 
+    it('should allow respondent to accept the claim within 72 hours after creation', async () => {
+        // arrange
+        const dealID = 1234;
+        const reasonNote = "reason note";
+        const requesterId = "requester id";
+        const respondentId = "respondent id";
+
+        await token.approve(claimHandler.address, MIN_STAKE, {from: REQUESTER});
+
+        const claimId = new BigNumber(await claimHandler.getClaimsCount());
+        await claimHandler.create(dealID, reasonNote, requesterId, respondentId, {from: REQUESTER});
+        await increaseTime(duration.hours(71) + duration.minutes(59));
+
+        const respondentBalance = new BigNumber(await token.balanceOf(RESPONDENT));
+        const claimHandlerBalance = new BigNumber(await token.balanceOf(claimHandler.address));
+
+        // act
+        await token.approve(claimHandler.address, MIN_STAKE, {from: RESPONDENT});
+        const tx = await claimHandler.accept(claimId, {from: RESPONDENT});
+        const txTimestamp = web3.eth.getBlock(tx.receipt.blockNumber).timestamp;
+
+        // assert
+
+        // MTH staked
+        const respondentBalance2 = new BigNumber(await token.balanceOf(RESPONDENT));
+        respondentBalance2.should.be.bignumber.equal(respondentBalance.sub(MIN_STAKE));
+        const claimHandlerBalance2 = new BigNumber(await token.balanceOf(claimHandler.address));
+        claimHandlerBalance2.should.be.bignumber.equal(claimHandlerBalance.add(MIN_STAKE));
+
+        // event
+        expectEvent.inLogs(tx.logs, "ClaimAccepted", {
+            dealId: dealID,
+            claimIdx: claimId,
+        });
+
+        // claim state
+        const claim = await claimHandler.claims(claimId);
+
+        claim[FieldState].should.be.bignumber.equal(StateAwaitingResolution);
+        claim[FieldTimestamp].should.be.bignumber.equal(txTimestamp);
+        claim[FieldDealId].should.be.bignumber.equal(dealID);
+        assert.equal(claim[FieldReasonNote], reasonNote);
+        assert.equal(claim[FieldRequesterId], requesterId);
+        assert.equal(claim[FieldRequesterAddress], REQUESTER);
+        claim[FieldRequesterStaked].should.be.bignumber.equal(MIN_STAKE);
+        assert.equal(claim[FieldRespondentId], respondentId);
+        assert.equal(claim[FieldRespondentAddress], RESPONDENT);
+        claim[FieldRespondentStaked].should.be.bignumber.equal(MIN_STAKE);
+        assert.equal(claim[FieldResolutionNote], "");
+    });
+
     shouldBehaveLikeCanReclaimEther(OTHER);
     shouldBehaveLikeCanReclaimTokens(OTHER);
 });
