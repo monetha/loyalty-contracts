@@ -238,6 +238,88 @@ contract('MonethaClaimHandler', function (accounts) {
         assert.equal(claim[FieldResolutionNote], "");
     });
 
+    it('should not allow requester to close the claim within 72 hours after acceptance', async () => {
+        // arrange
+        const dealID = 1234;
+        const reasonNote = "reason note";
+        const requesterId = "requester id";
+        const respondentId = "respondent id";
+
+        await token.approve(claimHandler.address, MIN_STAKE, {from: REQUESTER});
+
+        const claimId = new BigNumber(await claimHandler.getClaimsCount());
+        await claimHandler.create(dealID, reasonNote, requesterId, respondentId, {from: REQUESTER});
+
+        await token.approve(claimHandler.address, MIN_STAKE, {from: RESPONDENT});
+        await claimHandler.accept(claimId, {from: RESPONDENT});
+
+        // act
+        await claimHandler.close(claimId, {from: REQUESTER}).should.be.rejectedWith(Revert);
+
+        await increaseTime(duration.hours(71) + duration.minutes(59));
+
+        await claimHandler.close(claimId, {from: REQUESTER}).should.be.rejectedWith(Revert);
+
+        // assert
+    });
+
+    it('should allow requester to close the claim 72 hours after acceptance', async () => {
+        // arrange
+        const dealID = 1234;
+        const reasonNote = "reason note";
+        const requesterId = "requester id";
+        const respondentId = "respondent id";
+
+        await token.approve(claimHandler.address, MIN_STAKE, {from: REQUESTER});
+
+        const claimId = new BigNumber(await claimHandler.getClaimsCount());
+        await claimHandler.create(dealID, reasonNote, requesterId, respondentId, {from: REQUESTER});
+
+        await token.approve(claimHandler.address, MIN_STAKE, {from: RESPONDENT});
+        await claimHandler.accept(claimId, {from: RESPONDENT});
+
+        await increaseTime(duration.hours(72));
+
+        const requesterBalance = new BigNumber(await token.balanceOf(REQUESTER));
+        const respondentBalance = new BigNumber(await token.balanceOf(RESPONDENT));
+        const claimHandlerBalance = new BigNumber(await token.balanceOf(claimHandler.address));
+
+        // act
+        const tx = await claimHandler.close(claimId, {from: REQUESTER});
+        const txTimestamp = web3.eth.getBlock(tx.receipt.blockNumber).timestamp;
+
+        // assert
+
+        // event emitted
+        expectEvent.inLogs(tx.logs, "ClaimClosedAfterResolutionExpired", {
+            dealId: dealID,
+            claimIdx: claimId,
+        });
+
+        // MTH staked
+        const requesterBalance2 = new BigNumber(await token.balanceOf(REQUESTER));
+        requesterBalance2.should.be.bignumber.equal(requesterBalance.add(2 * MIN_STAKE));
+        const respondentBalance2 = new BigNumber(await token.balanceOf(RESPONDENT));
+        respondentBalance2.should.be.bignumber.equal(respondentBalance);
+        const claimHandlerBalance2 = new BigNumber(await token.balanceOf(claimHandler.address));
+        claimHandlerBalance2.should.be.bignumber.equal(claimHandlerBalance.sub(2 * MIN_STAKE));
+
+        // claim state
+        const claim = await claimHandler.claims(claimId);
+
+        claim[FieldState].should.be.bignumber.equal(StateClosedAfterResolutionExpired);
+        claim[FieldTimestamp].should.be.bignumber.equal(txTimestamp);
+        claim[FieldDealId].should.be.bignumber.equal(dealID);
+        assert.equal(claim[FieldReasonNote], reasonNote);
+        assert.equal(claim[FieldRequesterId], requesterId);
+        assert.equal(claim[FieldRequesterAddress], REQUESTER);
+        claim[FieldRequesterStaked].should.be.bignumber.equal(0);
+        assert.equal(claim[FieldRespondentId], respondentId);
+        assert.equal(claim[FieldRespondentAddress], RESPONDENT);
+        claim[FieldRespondentStaked].should.be.bignumber.equal(0);
+        assert.equal(claim[FieldResolutionNote], "");
+    });
+
     shouldBehaveLikeCanReclaimEther(OTHER);
     shouldBehaveLikeCanReclaimTokens(OTHER);
 });
