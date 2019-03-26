@@ -27,8 +27,8 @@ contract MonethaClaimHandler is Restricted, Pausable, CanReclaimEther, CanReclai
     event ClaimClosedAfterConfirmationExpired(uint256 indexed dealId, uint256 indexed claimIdx);
     event ClaimClosed(uint256 indexed dealId, uint256 indexed claimIdx);
 
-    ERC20 public mthToken;   // MTH token contract address
-    uint256 public minStake; // minimum amount of MTH to create and accept claim
+    ERC20 public token;      // token contract address
+    uint256 public minStake; // minimum amount of token units to create and accept claim
 
     // State of claim
     enum State {
@@ -58,15 +58,15 @@ contract MonethaClaimHandler is Restricted, Pausable, CanReclaimEther, CanReclai
 
     Claim[] public claims;
 
-    constructor(ERC20 _mthToken, uint256 _minStake) public {
-        require(_mthToken != address(0), "must be valid token address");
+    constructor(ERC20 _token, uint256 _minStake) public {
+        require(_token != address(0), "must be valid token address");
 
-        mthToken = _mthToken;
+        token = _token;
         _setMinStake(_minStake);
     }
 
     /**
-     * @dev sets the minimum amount of MTH tokens to stake when creating or accepting the claim.
+     * @dev sets the minimum amount of tokens units to stake when creating or accepting the claim.
      * Only Monetha account allowed to call this method.
      */
     function setMinStake(uint256 _newMinStake) external whenNotPaused onlyMonetha {
@@ -82,8 +82,8 @@ contract MonethaClaimHandler is Restricted, Pausable, CanReclaimEther, CanReclai
 
     /**
     * @dev creates new claim using provided parameters. Before calling this method, requester should approve
-    * this contract to transfer min. amount of MTH tokens in their behalf, by calling
-    * `approve(address _spender, uint _value)` method of MTH token contract.
+    * this contract to transfer min. amount of token units in their behalf, by calling
+    * `approve(address _spender, uint _value)` method of token contract.
     * Respondent should accept the claim by calling accept() method.
     * claimIdx should be extracted from ClaimCreated event.
     */
@@ -99,7 +99,7 @@ contract MonethaClaimHandler is Restricted, Pausable, CanReclaimEther, CanReclai
         require(keccak256(abi.encodePacked(_requesterId)) != keccak256(abi.encodePacked(_respondentId)),
             "requester and respondent must be different");
 
-        uint256 requesterStaked = _stakeMTHFrom(msg.sender);
+        uint256 requesterStaked = _stakeTokensFrom(msg.sender);
 
         Claim memory claim = Claim({
             state : State.AwaitingAcceptance,
@@ -121,8 +121,8 @@ contract MonethaClaimHandler is Restricted, Pausable, CanReclaimEther, CanReclai
 
     /**
      * @dev accepts the claim by respondent. Before calling this method, respondent should approve
-     * this contract to transfer min. amount of MTH tokens in their behalf, by calling
-     * `approve(address _spender, uint _value)` method of MTH token contract.
+     * this contract to transfer min. amount of token units in their behalf, by calling
+     * `approve(address _spender, uint _value)` method of token contract.
      */
     function accept(uint256 _claimIdx) external whenNotPaused {
         require(_claimIdx < claims.length, "invalid claim index");
@@ -130,7 +130,7 @@ contract MonethaClaimHandler is Restricted, Pausable, CanReclaimEther, CanReclai
         require(State.AwaitingAcceptance == claim.state, "State.AwaitingAcceptance required");
         require(msg.sender != claim.requesterAddress, "requester and respondent addresses must be different");
 
-        uint256 respondentStaked = _stakeMTHFrom(msg.sender);
+        uint256 respondentStaked = _stakeTokensFrom(msg.sender);
 
         claim.state = State.AwaitingResolution;
         claim.timestamp = now;
@@ -141,7 +141,7 @@ contract MonethaClaimHandler is Restricted, Pausable, CanReclaimEther, CanReclai
     }
 
     /**
-     * @dev resolves the claim by respondent. Respondent will get staked amount of MTH tokens back.
+     * @dev resolves the claim by respondent. Respondent will get staked amount of tokens back.
      */
     function resolve(uint256 _claimIdx, string _resolutionNote) external whenNotPaused {
         require(_claimIdx < claims.length, "invalid claim index");
@@ -157,7 +157,7 @@ contract MonethaClaimHandler is Restricted, Pausable, CanReclaimEther, CanReclai
         claim.resolutionNote = _resolutionNote;
 
         if (respStakedBefore > 0) {
-            mthToken.safeTransfer(msg.sender, respStakedBefore);
+            token.safeTransfer(msg.sender, respStakedBefore);
         }
 
         emit ClaimResolved(claim.dealId, _claimIdx);
@@ -166,7 +166,7 @@ contract MonethaClaimHandler is Restricted, Pausable, CanReclaimEther, CanReclai
     /**
      * @dev closes the claim by requester.
      * Requester allowed to call this method 72 hours after call to create() or accept(), and immediately after resolve().
-     * Requester will get staked amount of MTH tokens back. Requester will also get the respondent’s MTH tokens if
+     * Requester will get staked amount of tokens back. Requester will also get the respondent’s tokens if
      * the respondent did not call the resolve() method within 72 hours.
      */
     function close(uint256 _claimIdx) external whenNotPaused {
@@ -196,7 +196,7 @@ contract MonethaClaimHandler is Restricted, Pausable, CanReclaimEther, CanReclai
         claim.timestamp = now;
         claim.requesterStaked = 0;
         if (stakedBefore > 0) {
-            mthToken.safeTransfer(msg.sender, stakedBefore);
+            token.safeTransfer(msg.sender, stakedBefore);
         }
 
         emit ClaimClosedAfterAcceptanceExpired(claim.dealId, _claimIdx);
@@ -217,10 +217,10 @@ contract MonethaClaimHandler is Restricted, Pausable, CanReclaimEther, CanReclai
         claim.respondentStaked = 0;
 
         if (reqStakedBefore > 0) {
-            mthToken.safeTransfer(msg.sender, reqStakedBefore);
+            token.safeTransfer(msg.sender, reqStakedBefore);
         }
         if (respStakedBefore > 0) {
-            mthToken.safeTransfer(msg.sender, respStakedBefore);
+            token.safeTransfer(msg.sender, respStakedBefore);
         }
 
         emit ClaimClosedAfterResolutionExpired(claim.dealId, _claimIdx);
@@ -242,7 +242,7 @@ contract MonethaClaimHandler is Restricted, Pausable, CanReclaimEther, CanReclai
         uint256 stakedBefore = claim.requesterStaked;
         claim.requesterStaked = 0;
         if (stakedBefore > 0) {
-            mthToken.safeTransfer(msg.sender, stakedBefore);
+            token.safeTransfer(msg.sender, stakedBefore);
         }
 
         if (expired) {
@@ -256,11 +256,11 @@ contract MonethaClaimHandler is Restricted, Pausable, CanReclaimEther, CanReclai
         return now >= start + hoursAfter * 1 hours;
     }
 
-    function _stakeMTHFrom(address _from) internal returns (uint256 staked) {
-        staked = mthToken.allowance(_from, address(this));
+    function _stakeTokensFrom(address _from) internal returns (uint256 staked) {
+        staked = token.allowance(_from, address(this));
         require(staked >= minStake, "min. stake allowance needed");
 
-        mthToken.safeTransferFrom(_from, address(this), staked);
+        token.safeTransferFrom(_from, address(this), staked);
     }
 
     function _setMinStake(uint256 _newMinStake) internal {
