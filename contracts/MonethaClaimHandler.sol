@@ -1,5 +1,6 @@
 pragma solidity ^0.4.24;
 
+import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 import "openzeppelin-solidity/contracts/lifecycle/Pausable.sol";
 import "openzeppelin-solidity/contracts/token/ERC20/ERC20Basic.sol";
 import "openzeppelin-solidity/contracts/token/ERC20/ERC20.sol";
@@ -14,6 +15,7 @@ import "./ownership/CanReclaimTokens.sol";
  *  MonethaClaimHandler handles claim creation, acceptance, resolution and confirmation.
  */
 contract MonethaClaimHandler is Restricted, Pausable, CanReclaimEther, CanReclaimTokens {
+    using SafeMath for uint256;
     using SafeERC20 for ERC20;
     using SafeERC20 for ERC20Basic;
 
@@ -208,19 +210,15 @@ contract MonethaClaimHandler is Restricted, Pausable, CanReclaimEther, CanReclai
         require(_hoursPassed(claim.modified, 72), "expiration required");
         require(msg.sender == claim.requesterAddress, "awaiting requester");
 
-        uint256 reqStakedBefore = claim.requesterStaked;
-        uint256 respStakedBefore = claim.respondentStaked;
+        uint256 totalStaked = claim.requesterStaked.add(claim.respondentStaked);
 
         claim.state = State.ClosedAfterResolutionExpired;
         claim.modified = now;
         claim.requesterStaked = 0;
         claim.respondentStaked = 0;
 
-        if (reqStakedBefore > 0) {
-            token.safeTransfer(msg.sender, reqStakedBefore);
-        }
-        if (respStakedBefore > 0) {
-            token.safeTransfer(msg.sender, respStakedBefore);
+        if (totalStaked > 0) {
+            token.safeTransfer(msg.sender, totalStaked);
         }
 
         emit ClaimClosedAfterResolutionExpired(claim.dealId, _claimIdx);
