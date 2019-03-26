@@ -32,7 +32,7 @@ contract('MonethaClaimHandler', function (accounts) {
     const StateClosed = 7;
 
     const FieldState = 0;
-    const FieldTimestamp = 1;
+    const FieldModified = 1;
     const FieldDealId = 2;
     const FieldReasonNote = 3;
     const FieldRequesterId = 4;
@@ -106,7 +106,7 @@ contract('MonethaClaimHandler', function (accounts) {
             const claim = await claimHandler.claims(count);
 
             claim[FieldState].should.be.bignumber.equal(StateAwaitingAcceptance);
-            claim[FieldTimestamp].should.be.bignumber.equal(txTimestamp);
+            claim[FieldModified].should.be.bignumber.equal(txTimestamp);
             claim[FieldDealId].should.be.bignumber.equal(dealID);
             assert.equal(claim[FieldReasonNote], reasonNote);
             assert.equal(claim[FieldRequesterId], requesterId);
@@ -188,7 +188,7 @@ contract('MonethaClaimHandler', function (accounts) {
             const claim = await claimHandler.claims(claimId);
 
             claim[FieldState].should.be.bignumber.equal(StateClosedAfterAcceptanceExpired);
-            claim[FieldTimestamp].should.be.bignumber.equal(txTimestamp);
+            claim[FieldModified].should.be.bignumber.equal(txTimestamp);
             claim[FieldDealId].should.be.bignumber.equal(dealID);
             assert.equal(claim[FieldReasonNote], reasonNote);
             assert.equal(claim[FieldRequesterId], requesterId);
@@ -276,7 +276,7 @@ contract('MonethaClaimHandler', function (accounts) {
             const claim = await claimHandler.claims(claimId);
 
             claim[FieldState].should.be.bignumber.equal(StateClosedAfterResolutionExpired);
-            claim[FieldTimestamp].should.be.bignumber.equal(txTimestamp);
+            claim[FieldModified].should.be.bignumber.equal(txTimestamp);
             claim[FieldDealId].should.be.bignumber.equal(dealID);
             assert.equal(claim[FieldReasonNote], reasonNote);
             assert.equal(claim[FieldRequesterId], requesterId);
@@ -339,7 +339,7 @@ contract('MonethaClaimHandler', function (accounts) {
             const claim = await claimHandler.claims(claimId);
 
             claim[FieldState].should.be.bignumber.equal(StateClosed);
-            claim[FieldTimestamp].should.be.bignumber.equal(txTimestamp);
+            claim[FieldModified].should.be.bignumber.equal(txTimestamp);
             claim[FieldDealId].should.be.bignumber.equal(dealID);
             assert.equal(claim[FieldReasonNote], reasonNote);
             assert.equal(claim[FieldRequesterId], requesterId);
@@ -402,7 +402,7 @@ contract('MonethaClaimHandler', function (accounts) {
             const claim = await claimHandler.claims(claimId);
 
             claim[FieldState].should.be.bignumber.equal(StateClosedAfterConfirmationExpired);
-            claim[FieldTimestamp].should.be.bignumber.equal(txTimestamp);
+            claim[FieldModified].should.be.bignumber.equal(txTimestamp);
             claim[FieldDealId].should.be.bignumber.equal(dealID);
             assert.equal(claim[FieldReasonNote], reasonNote);
             assert.equal(claim[FieldRequesterId], requesterId);
@@ -460,7 +460,7 @@ contract('MonethaClaimHandler', function (accounts) {
             const claim = await claimHandler.claims(claimId);
 
             claim[FieldState].should.be.bignumber.equal(StateAwaitingResolution);
-            claim[FieldTimestamp].should.be.bignumber.equal(txTimestamp);
+            claim[FieldModified].should.be.bignumber.equal(txTimestamp);
             claim[FieldDealId].should.be.bignumber.equal(dealID);
             assert.equal(claim[FieldReasonNote], reasonNote);
             assert.equal(claim[FieldRequesterId], requesterId);
@@ -525,7 +525,7 @@ contract('MonethaClaimHandler', function (accounts) {
             const claim = await claimHandler.claims(claimId);
 
             claim[FieldState].should.be.bignumber.equal(StateAwaitingConfirmation);
-            claim[FieldTimestamp].should.be.bignumber.equal(txTimestamp);
+            claim[FieldModified].should.be.bignumber.equal(txTimestamp);
             claim[FieldDealId].should.be.bignumber.equal(dealID);
             assert.equal(claim[FieldReasonNote], reasonNote);
             assert.equal(claim[FieldRequesterId], requesterId);

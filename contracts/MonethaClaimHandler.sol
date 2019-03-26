@@ -44,7 +44,7 @@ contract MonethaClaimHandler is Restricted, Pausable, CanReclaimEther, CanReclai
 
     struct Claim {
         State state;
-        uint256 timestamp;
+        uint256 modified;
         uint256 dealId; // immutable after AwaitingAcceptance
         string reasonNote; // immutable after AwaitingAcceptance
         string requesterId; // immutable after AwaitingAcceptance
@@ -103,7 +103,7 @@ contract MonethaClaimHandler is Restricted, Pausable, CanReclaimEther, CanReclai
 
         Claim memory claim = Claim({
             state : State.AwaitingAcceptance,
-            timestamp : now,
+            modified : now,
             dealId : _dealId,
             reasonNote : _reasonNote,
             requesterId : _requesterId,
@@ -133,7 +133,7 @@ contract MonethaClaimHandler is Restricted, Pausable, CanReclaimEther, CanReclai
         uint256 respondentStaked = _stakeTokensFrom(msg.sender);
 
         claim.state = State.AwaitingResolution;
-        claim.timestamp = now;
+        claim.modified = now;
         claim.respondentAddress = msg.sender;
         claim.respondentStaked = respondentStaked;
 
@@ -152,7 +152,7 @@ contract MonethaClaimHandler is Restricted, Pausable, CanReclaimEther, CanReclai
         uint256 respStakedBefore = claim.respondentStaked;
 
         claim.state = State.AwaitingConfirmation;
-        claim.timestamp = now;
+        claim.modified = now;
         claim.respondentStaked = 0;
         claim.resolutionNote = _resolutionNote;
 
@@ -188,12 +188,12 @@ contract MonethaClaimHandler is Restricted, Pausable, CanReclaimEther, CanReclai
         Claim storage claim = claims[_claimIdx];
         require(msg.sender == claim.requesterAddress, "awaiting requester");
         require(State.AwaitingAcceptance == claim.state, "State.AwaitingAcceptance required");
-        require(_hoursPassed(claim.timestamp, 72), "expiration required");
+        require(_hoursPassed(claim.modified, 72), "expiration required");
 
         uint256 stakedBefore = claim.requesterStaked;
 
         claim.state = State.ClosedAfterAcceptanceExpired;
-        claim.timestamp = now;
+        claim.modified = now;
         claim.requesterStaked = 0;
         if (stakedBefore > 0) {
             token.safeTransfer(msg.sender, stakedBefore);
@@ -205,14 +205,14 @@ contract MonethaClaimHandler is Restricted, Pausable, CanReclaimEther, CanReclai
     function _closeAfterAwaitingResolution(uint256 _claimIdx) internal {
         Claim storage claim = claims[_claimIdx];
         require(State.AwaitingResolution == claim.state, "State.AwaitingResolution required");
-        require(_hoursPassed(claim.timestamp, 72), "expiration required");
+        require(_hoursPassed(claim.modified, 72), "expiration required");
         require(msg.sender == claim.requesterAddress, "awaiting requester");
 
         uint256 reqStakedBefore = claim.requesterStaked;
         uint256 respStakedBefore = claim.respondentStaked;
 
         claim.state = State.ClosedAfterResolutionExpired;
-        claim.timestamp = now;
+        claim.modified = now;
         claim.requesterStaked = 0;
         claim.respondentStaked = 0;
 
@@ -231,13 +231,13 @@ contract MonethaClaimHandler is Restricted, Pausable, CanReclaimEther, CanReclai
         require(msg.sender == claim.requesterAddress, "awaiting requester");
         require(State.AwaitingConfirmation == claim.state, "State.AwaitingConfirmation required");
 
-        bool expired = _hoursPassed(claim.timestamp, 24);
+        bool expired = _hoursPassed(claim.modified, 24);
         if (expired) {
             claim.state = State.ClosedAfterConfirmationExpired;
         } else {
             claim.state = State.Closed;
         }
-        claim.timestamp = now;
+        claim.modified = now;
 
         uint256 stakedBefore = claim.requesterStaked;
         claim.requesterStaked = 0;
