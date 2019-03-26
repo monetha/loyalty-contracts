@@ -161,6 +161,7 @@ contract MonethaClaimHandler is Restricted, Pausable, CanReclaimEther, CanReclai
      */
     function resolve(uint256 _claimIdx, string _resolutionNote) external whenNotPaused {
         require(_claimIdx < claims.length, "invalid claim index");
+        require(bytes(_resolutionNote).length > 0, "resolution note must not be empty");
         Claim storage claim = claims[_claimIdx];
         require(State.AwaitingResolution == claim.state, "State.AwaitingResolution required");
         require(msg.sender == claim.respondentAddress, "awaiting respondent");
