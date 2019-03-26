@@ -101,7 +101,9 @@ contract MonethaClaimHandler is Restricted, Pausable, CanReclaimEther, CanReclai
         require(keccak256(abi.encodePacked(_requesterId)) != keccak256(abi.encodePacked(_respondentId)),
             "requester and respondent must be different");
 
-        uint256 requesterStaked = _stakeTokensFrom(msg.sender);
+        uint256 requesterStaked = token.allowance(msg.sender, address(this));
+        require(requesterStaked >= minStake, "min. stake allowance needed");
+        token.safeTransferFrom(msg.sender, address(this), requesterStaked);
 
         Claim memory claim = Claim({
             state : State.AwaitingAcceptance,
@@ -124,7 +126,8 @@ contract MonethaClaimHandler is Restricted, Pausable, CanReclaimEther, CanReclai
     /**
      * @dev accepts the claim by respondent. Before calling this method, respondent should approve
      * this contract to transfer min. amount of token units in their behalf, by calling
-     * `approve(address _spender, uint _value)` method of token contract.
+     * `approve(address _spender, uint _value)` method of token contract. Respondent must stake the same amount
+     * of tokens as requester.
      */
     function accept(uint256 _claimIdx) external whenNotPaused {
         require(_claimIdx < claims.length, "invalid claim index");
@@ -132,12 +135,13 @@ contract MonethaClaimHandler is Restricted, Pausable, CanReclaimEther, CanReclai
         require(State.AwaitingAcceptance == claim.state, "State.AwaitingAcceptance required");
         require(msg.sender != claim.requesterAddress, "requester and respondent addresses must be different");
 
-        uint256 respondentStaked = _stakeTokensFrom(msg.sender);
+        uint256 requesterStaked = claim.requesterStaked;
+        token.safeTransferFrom(msg.sender, address(this), requesterStaked);
 
         claim.state = State.AwaitingResolution;
         claim.modified = now;
         claim.respondentAddress = msg.sender;
-        claim.respondentStaked = respondentStaked;
+        claim.respondentStaked = requesterStaked;
 
         emit ClaimAccepted(claim.dealId, _claimIdx);
     }
@@ -252,13 +256,6 @@ contract MonethaClaimHandler is Restricted, Pausable, CanReclaimEther, CanReclai
 
     function _hoursPassed(uint256 start, uint256 hoursAfter) internal view returns (bool) {
         return now >= start + hoursAfter * 1 hours;
-    }
-
-    function _stakeTokensFrom(address _from) internal returns (uint256 staked) {
-        staked = token.allowance(_from, address(this));
-        require(staked >= minStake, "min. stake allowance needed");
-
-        token.safeTransferFrom(_from, address(this), staked);
     }
 
     function _setMinStake(uint256 _newMinStake) internal {

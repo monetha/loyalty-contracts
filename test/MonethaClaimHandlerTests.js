@@ -417,14 +417,15 @@ contract('MonethaClaimHandler', function (accounts) {
 
 
     describe('accept', function () {
-        it('should allow respondent, but not the requester to accept the claim after creation', async () => {
+        it('should allow respondent, but not the requester to accept the claim after creation by staking the same amount of tokens', async () => {
             // arrange
+            const requesterStake = 2 * MIN_STAKE;
             const dealID = 1234;
             const reasonNote = "reason note";
             const requesterId = "requester id";
             const respondentId = "respondent id";
 
-            await token.approve(claimHandler.address, MIN_STAKE, {from: REQUESTER});
+            await token.approve(claimHandler.address, requesterStake, {from: REQUESTER});
 
             const claimId = new BigNumber(await claimHandler.getClaimsCount());
             await claimHandler.create(dealID, reasonNote, requesterId, respondentId, {from: REQUESTER});
@@ -434,10 +435,13 @@ contract('MonethaClaimHandler', function (accounts) {
             const claimHandlerBalance = new BigNumber(await token.balanceOf(claimHandler.address));
 
             // act
-            await token.approve(claimHandler.address, MIN_STAKE, {from: REQUESTER});
-            await claimHandler.accept(claimId, {from: REQUESTER}).should.be.rejectedWith(Revert);
+            await token.approve(claimHandler.address, requesterStake, {from: REQUESTER});
+            await claimHandler.accept(claimId, {from: REQUESTER}).should.be.rejectedWith(Revert); // not respondent
 
-            await token.approve(claimHandler.address, MIN_STAKE, {from: RESPONDENT});
+            await token.approve(claimHandler.address, requesterStake - 1, {from: RESPONDENT});
+            await claimHandler.accept(claimId, {from: RESPONDENT}).should.be.rejectedWith(Revert); // not equal to requester stake
+
+            await token.approve(claimHandler.address, requesterStake + MIN_STAKE, {from: RESPONDENT}); // only amount of `requesterStake` should be staked
             const tx = await claimHandler.accept(claimId, {from: RESPONDENT});
             const txTimestamp = web3.eth.getBlock(tx.receipt.blockNumber).timestamp;
             console.log("\taccept, gas used:", tx.receipt.gasUsed);
@@ -446,9 +450,9 @@ contract('MonethaClaimHandler', function (accounts) {
 
             // MTH staked
             const respondentBalance2 = new BigNumber(await token.balanceOf(RESPONDENT));
-            respondentBalance2.should.be.bignumber.equal(respondentBalance.sub(MIN_STAKE));
+            respondentBalance2.should.be.bignumber.equal(respondentBalance.sub(requesterStake));
             const claimHandlerBalance2 = new BigNumber(await token.balanceOf(claimHandler.address));
-            claimHandlerBalance2.should.be.bignumber.equal(claimHandlerBalance.add(MIN_STAKE));
+            claimHandlerBalance2.should.be.bignumber.equal(claimHandlerBalance.add(requesterStake));
 
             // event
             expectEvent.inLogs(tx.logs, "ClaimAccepted", {
@@ -465,10 +469,10 @@ contract('MonethaClaimHandler', function (accounts) {
             assert.equal(claim[FieldReasonNote], reasonNote);
             assert.equal(claim[FieldRequesterId], requesterId);
             assert.equal(claim[FieldRequesterAddress], REQUESTER);
-            claim[FieldRequesterStaked].should.be.bignumber.equal(MIN_STAKE);
+            claim[FieldRequesterStaked].should.be.bignumber.equal(requesterStake);
             assert.equal(claim[FieldRespondentId], respondentId);
             assert.equal(claim[FieldRespondentAddress], RESPONDENT);
-            claim[FieldRespondentStaked].should.be.bignumber.equal(MIN_STAKE);
+            claim[FieldRespondentStaked].should.be.bignumber.equal(requesterStake);
             assert.equal(claim[FieldResolutionNote], "");
         });
     });
