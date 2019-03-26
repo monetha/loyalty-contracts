@@ -88,6 +88,8 @@ contract MonethaClaimHandler is Restricted, Pausable, CanReclaimEther, CanReclai
     * `approve(address _spender, uint _value)` method of token contract.
     * Respondent should accept the claim by calling accept() method.
     * claimIdx should be extracted from ClaimCreated event.
+    *
+    * Claim state after call 🡒 AwaitingAcceptance
     */
     function create(
         uint256 _dealId,
@@ -128,6 +130,8 @@ contract MonethaClaimHandler is Restricted, Pausable, CanReclaimEther, CanReclai
      * this contract to transfer min. amount of token units in their behalf, by calling
      * `approve(address _spender, uint _value)` method of token contract. Respondent must stake the same amount
      * of tokens as requester.
+     *
+     * Claim state after call 🡒 AwaitingResolution (if was AwaitingAcceptance)
      */
     function accept(uint256 _claimIdx) external whenNotPaused {
         require(_claimIdx < claims.length, "invalid claim index");
@@ -148,6 +152,8 @@ contract MonethaClaimHandler is Restricted, Pausable, CanReclaimEther, CanReclai
 
     /**
      * @dev resolves the claim by respondent. Respondent will get staked amount of tokens back.
+     *
+     * Claim state after call 🡒 AwaitingConfirmation (if was AwaitingResolution)
      */
     function resolve(uint256 _claimIdx, string _resolutionNote) external whenNotPaused {
         require(_claimIdx < claims.length, "invalid claim index");
@@ -174,6 +180,11 @@ contract MonethaClaimHandler is Restricted, Pausable, CanReclaimEther, CanReclai
      * Requester allowed to call this method 72 hours after call to create() or accept(), and immediately after resolve().
      * Requester will get staked amount of tokens back. Requester will also get the respondent’s tokens if
      * the respondent did not call the resolve() method within 72 hours.
+     *
+     * Claim state after call 🡒 Closed                         (if was AwaitingConfirmation, and less than 24 hours passed)
+     *                        🡒 ClosedAfterConfirmationExpired (if was AwaitingConfirmation, after 24 hours)
+     *                        🡒 ClosedAfterAcceptanceExpired   (if was AwaitingAcceptance, after 72 hours)
+     *                        🡒 ClosedAfterResolutionExpired   (if was AwaitingResolution, after 72 hours)
      */
     function close(uint256 _claimIdx) external whenNotPaused {
         require(_claimIdx < claims.length, "invalid claim index");
