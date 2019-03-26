@@ -34,14 +34,15 @@ contract('MonethaClaimHandler', function (accounts) {
     const FieldState = 0;
     const FieldModified = 1;
     const FieldDealId = 2;
-    const FieldReasonNote = 3;
-    const FieldRequesterId = 4;
-    const FieldRequesterAddress = 5;
-    const FieldRequesterStaked = 6;
-    const FieldRespondentId = 7;
-    const FieldRespondentAddress = 8;
-    const FieldRespondentStaked = 9;
-    const FieldResolutionNote = 10;
+    const FieldDealHash = 3;
+    const FieldReasonNote = 4;
+    const FieldRequesterId = 5;
+    const FieldRequesterAddress = 6;
+    const FieldRequesterStaked = 7;
+    const FieldRespondentId = 8;
+    const FieldRespondentAddress = 9;
+    const FieldRespondentStaked = 10;
+    const FieldResolutionNote = 11;
 
     let token;
     let claimHandler;
@@ -70,9 +71,10 @@ contract('MonethaClaimHandler', function (accounts) {
         it('should allow requester to create new claim', async () => {
             // arrange
             const dealID = 1234;
+            const dealHash = "0x657468657265756d000000000000000000000000000000000000000000000000";
             const reasonNote = "reason note";
-            const requesterId = "requester id";
-            const respondentId = "respondent id";
+            const requesterId = "0x3132333435363738393031323334353600000000000000000000000000000000";
+            const respondentId = "0x3635343332313039383736353433323100000000000000000000000000000000";
 
             await token.approve(claimHandler.address, MIN_STAKE, {from: REQUESTER});
 
@@ -81,7 +83,7 @@ contract('MonethaClaimHandler', function (accounts) {
             const count = new BigNumber(await claimHandler.getClaimsCount());
 
             // act
-            const tx = await claimHandler.create(dealID, reasonNote, requesterId, respondentId, {from: REQUESTER});
+            const tx = await claimHandler.create(dealID, dealHash, reasonNote, requesterId, respondentId, {from: REQUESTER});
             const txTimestamp = web3.eth.getBlock(tx.receipt.blockNumber).timestamp;
             console.log("\tcreate, gas used:", tx.receipt.gasUsed);
 
@@ -108,6 +110,7 @@ contract('MonethaClaimHandler', function (accounts) {
             claim[FieldState].should.be.bignumber.equal(StateAwaitingAcceptance);
             claim[FieldModified].should.be.bignumber.equal(txTimestamp);
             claim[FieldDealId].should.be.bignumber.equal(dealID);
+            assert.equal(claim[FieldDealHash], dealHash);
             assert.equal(claim[FieldReasonNote], reasonNote);
             assert.equal(claim[FieldRequesterId], requesterId);
             assert.equal(claim[FieldRequesterAddress], REQUESTER);
@@ -124,14 +127,15 @@ contract('MonethaClaimHandler', function (accounts) {
         it('should not allow requester to close the claim within 72 hours after creation', async () => {
             // arrange
             const dealID = 1234;
+            const dealHash = "0x657468657265756d000000000000000000000000000000000000000000000000";
             const reasonNote = "reason note";
-            const requesterId = "requester id";
-            const respondentId = "respondent id";
+            const requesterId = "0x3132333435363738393031323334353600000000000000000000000000000000";
+            const respondentId = "0x3635343332313039383736353433323100000000000000000000000000000000";
 
             await token.approve(claimHandler.address, MIN_STAKE, {from: REQUESTER});
 
             const claimId = new BigNumber(await claimHandler.getClaimsCount());
-            await claimHandler.create(dealID, reasonNote, requesterId, respondentId, {from: REQUESTER});
+            await claimHandler.create(dealID, dealHash, reasonNote, requesterId, respondentId, {from: REQUESTER});
 
             // act
             await claimHandler.close(claimId, {from: REQUESTER}).should.be.rejectedWith(Revert);
@@ -146,14 +150,15 @@ contract('MonethaClaimHandler', function (accounts) {
         it('should allow only requester to close the claim 72 hours after creation', async () => {
             // arrange
             const dealID = 1234;
+            const dealHash = "0x657468657265756d000000000000000000000000000000000000000000000000";
             const reasonNote = "reason note";
-            const requesterId = "requester id";
-            const respondentId = "respondent id";
+            const requesterId = "0x3132333435363738393031323334353600000000000000000000000000000000";
+            const respondentId = "0x3635343332313039383736353433323100000000000000000000000000000000";
 
             await token.approve(claimHandler.address, MIN_STAKE, {from: REQUESTER});
 
             const claimId = new BigNumber(await claimHandler.getClaimsCount());
-            await claimHandler.create(dealID, reasonNote, requesterId, respondentId, {from: REQUESTER});
+            await claimHandler.create(dealID, dealHash, reasonNote, requesterId, respondentId, {from: REQUESTER});
 
             await increaseTime(duration.hours(72));
 
@@ -190,6 +195,7 @@ contract('MonethaClaimHandler', function (accounts) {
             claim[FieldState].should.be.bignumber.equal(StateClosedAfterAcceptanceExpired);
             claim[FieldModified].should.be.bignumber.equal(txTimestamp);
             claim[FieldDealId].should.be.bignumber.equal(dealID);
+            assert.equal(claim[FieldDealHash], dealHash);
             assert.equal(claim[FieldReasonNote], reasonNote);
             assert.equal(claim[FieldRequesterId], requesterId);
             assert.equal(claim[FieldRequesterAddress], REQUESTER);
@@ -203,14 +209,15 @@ contract('MonethaClaimHandler', function (accounts) {
         it('should not allow requester to close the claim within 72 hours after acceptance', async () => {
             // arrange
             const dealID = 1234;
+            const dealHash = "0x657468657265756d000000000000000000000000000000000000000000000000";
             const reasonNote = "reason note";
-            const requesterId = "requester id";
-            const respondentId = "respondent id";
+            const requesterId = "0x3132333435363738393031323334353600000000000000000000000000000000";
+            const respondentId = "0x3635343332313039383736353433323100000000000000000000000000000000";
 
             await token.approve(claimHandler.address, MIN_STAKE, {from: REQUESTER});
 
             const claimId = new BigNumber(await claimHandler.getClaimsCount());
-            await claimHandler.create(dealID, reasonNote, requesterId, respondentId, {from: REQUESTER});
+            await claimHandler.create(dealID, dealHash, reasonNote, requesterId, respondentId, {from: REQUESTER});
 
             await token.approve(claimHandler.address, MIN_STAKE, {from: RESPONDENT});
             await claimHandler.accept(claimId, {from: RESPONDENT});
@@ -228,14 +235,15 @@ contract('MonethaClaimHandler', function (accounts) {
         it('should allow only requester to close the claim 72 hours after acceptance', async () => {
             // arrange
             const dealID = 1234;
+            const dealHash = "0x657468657265756d000000000000000000000000000000000000000000000000";
             const reasonNote = "reason note";
-            const requesterId = "requester id";
-            const respondentId = "respondent id";
+            const requesterId = "0x3132333435363738393031323334353600000000000000000000000000000000";
+            const respondentId = "0x3635343332313039383736353433323100000000000000000000000000000000";
 
             await token.approve(claimHandler.address, MIN_STAKE, {from: REQUESTER});
 
             const claimId = new BigNumber(await claimHandler.getClaimsCount());
-            await claimHandler.create(dealID, reasonNote, requesterId, respondentId, {from: REQUESTER});
+            await claimHandler.create(dealID, dealHash, reasonNote, requesterId, respondentId, {from: REQUESTER});
 
             await token.approve(claimHandler.address, MIN_STAKE, {from: RESPONDENT});
             await claimHandler.accept(claimId, {from: RESPONDENT});
@@ -278,6 +286,7 @@ contract('MonethaClaimHandler', function (accounts) {
             claim[FieldState].should.be.bignumber.equal(StateClosedAfterResolutionExpired);
             claim[FieldModified].should.be.bignumber.equal(txTimestamp);
             claim[FieldDealId].should.be.bignumber.equal(dealID);
+            assert.equal(claim[FieldDealHash], dealHash);
             assert.equal(claim[FieldReasonNote], reasonNote);
             assert.equal(claim[FieldRequesterId], requesterId);
             assert.equal(claim[FieldRequesterAddress], REQUESTER);
@@ -291,15 +300,16 @@ contract('MonethaClaimHandler', function (accounts) {
         it('should allow only requester to close claim within 24 hours after resolution with Closed state', async () => {
             // arrange
             const dealID = 1234;
+            const dealHash = "0x657468657265756d000000000000000000000000000000000000000000000000";
             const reasonNote = "reason note";
-            const requesterId = "requester id";
-            const respondentId = "respondent id";
+            const requesterId = "0x3132333435363738393031323334353600000000000000000000000000000000";
+            const respondentId = "0x3635343332313039383736353433323100000000000000000000000000000000";
             const resolutionNote = "resolution note";
 
             await token.approve(claimHandler.address, MIN_STAKE, {from: REQUESTER});
 
             const claimId = new BigNumber(await claimHandler.getClaimsCount());
-            await claimHandler.create(dealID, reasonNote, requesterId, respondentId, {from: REQUESTER});
+            await claimHandler.create(dealID, dealHash, reasonNote, requesterId, respondentId, {from: REQUESTER});
 
             await token.approve(claimHandler.address, MIN_STAKE, {from: RESPONDENT});
             await claimHandler.accept(claimId, {from: RESPONDENT});
@@ -341,6 +351,7 @@ contract('MonethaClaimHandler', function (accounts) {
             claim[FieldState].should.be.bignumber.equal(StateClosed);
             claim[FieldModified].should.be.bignumber.equal(txTimestamp);
             claim[FieldDealId].should.be.bignumber.equal(dealID);
+            assert.equal(claim[FieldDealHash], dealHash);
             assert.equal(claim[FieldReasonNote], reasonNote);
             assert.equal(claim[FieldRequesterId], requesterId);
             assert.equal(claim[FieldRequesterAddress], REQUESTER);
@@ -354,15 +365,16 @@ contract('MonethaClaimHandler', function (accounts) {
         it('should allow only requester to close claim 24 hours after resolution with ClosedAfterConfirmationExpired state', async () => {
             // arrange
             const dealID = 1234;
+            const dealHash = "0x657468657265756d000000000000000000000000000000000000000000000000";
             const reasonNote = "reason note";
-            const requesterId = "requester id";
-            const respondentId = "respondent id";
+            const requesterId = "0x3132333435363738393031323334353600000000000000000000000000000000";
+            const respondentId = "0x3635343332313039383736353433323100000000000000000000000000000000";
             const resolutionNote = "resolution note";
 
             await token.approve(claimHandler.address, MIN_STAKE, {from: REQUESTER});
 
             const claimId = new BigNumber(await claimHandler.getClaimsCount());
-            await claimHandler.create(dealID, reasonNote, requesterId, respondentId, {from: REQUESTER});
+            await claimHandler.create(dealID, dealHash, reasonNote, requesterId, respondentId, {from: REQUESTER});
 
             await token.approve(claimHandler.address, MIN_STAKE, {from: RESPONDENT});
             await claimHandler.accept(claimId, {from: RESPONDENT});
@@ -404,6 +416,7 @@ contract('MonethaClaimHandler', function (accounts) {
             claim[FieldState].should.be.bignumber.equal(StateClosedAfterConfirmationExpired);
             claim[FieldModified].should.be.bignumber.equal(txTimestamp);
             claim[FieldDealId].should.be.bignumber.equal(dealID);
+            assert.equal(claim[FieldDealHash], dealHash);
             assert.equal(claim[FieldReasonNote], reasonNote);
             assert.equal(claim[FieldRequesterId], requesterId);
             assert.equal(claim[FieldRequesterAddress], REQUESTER);
@@ -421,14 +434,15 @@ contract('MonethaClaimHandler', function (accounts) {
             // arrange
             const requesterStake = 2 * MIN_STAKE;
             const dealID = 1234;
+            const dealHash = "0x657468657265756d000000000000000000000000000000000000000000000000";
             const reasonNote = "reason note";
-            const requesterId = "requester id";
-            const respondentId = "respondent id";
+            const requesterId = "0x3132333435363738393031323334353600000000000000000000000000000000";
+            const respondentId = "0x3635343332313039383736353433323100000000000000000000000000000000";
 
             await token.approve(claimHandler.address, requesterStake, {from: REQUESTER});
 
             const claimId = new BigNumber(await claimHandler.getClaimsCount());
-            await claimHandler.create(dealID, reasonNote, requesterId, respondentId, {from: REQUESTER});
+            await claimHandler.create(dealID, dealHash, reasonNote, requesterId, respondentId, {from: REQUESTER});
             await increaseTime(duration.hours(71) + duration.minutes(59));
 
             const respondentBalance = new BigNumber(await token.balanceOf(RESPONDENT));
@@ -466,6 +480,7 @@ contract('MonethaClaimHandler', function (accounts) {
             claim[FieldState].should.be.bignumber.equal(StateAwaitingResolution);
             claim[FieldModified].should.be.bignumber.equal(txTimestamp);
             claim[FieldDealId].should.be.bignumber.equal(dealID);
+            assert.equal(claim[FieldDealHash], dealHash);
             assert.equal(claim[FieldReasonNote], reasonNote);
             assert.equal(claim[FieldRequesterId], requesterId);
             assert.equal(claim[FieldRequesterAddress], REQUESTER);
@@ -482,15 +497,16 @@ contract('MonethaClaimHandler', function (accounts) {
         it('should allow only respondent to resolve claim after acceptance', async () => {
             // arrange
             const dealID = 1234;
+            const dealHash = "0x657468657265756d000000000000000000000000000000000000000000000000";
             const reasonNote = "reason note";
-            const requesterId = "requester id";
-            const respondentId = "respondent id";
+            const requesterId = "0x3132333435363738393031323334353600000000000000000000000000000000";
+            const respondentId = "0x3635343332313039383736353433323100000000000000000000000000000000";
             const resolutionNote = "resolution note";
 
             await token.approve(claimHandler.address, MIN_STAKE, {from: REQUESTER});
 
             const claimId = new BigNumber(await claimHandler.getClaimsCount());
-            await claimHandler.create(dealID, reasonNote, requesterId, respondentId, {from: REQUESTER});
+            await claimHandler.create(dealID, dealHash, reasonNote, requesterId, respondentId, {from: REQUESTER});
 
             await token.approve(claimHandler.address, MIN_STAKE, {from: RESPONDENT});
             await claimHandler.accept(claimId, {from: RESPONDENT});
@@ -531,6 +547,7 @@ contract('MonethaClaimHandler', function (accounts) {
             claim[FieldState].should.be.bignumber.equal(StateAwaitingConfirmation);
             claim[FieldModified].should.be.bignumber.equal(txTimestamp);
             claim[FieldDealId].should.be.bignumber.equal(dealID);
+            assert.equal(claim[FieldDealHash], dealHash);
             assert.equal(claim[FieldReasonNote], reasonNote);
             assert.equal(claim[FieldRequesterId], requesterId);
             assert.equal(claim[FieldRequesterAddress], REQUESTER);

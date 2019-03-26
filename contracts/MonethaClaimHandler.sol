@@ -48,11 +48,12 @@ contract MonethaClaimHandler is Restricted, Pausable, CanReclaimEther, CanReclai
         State state;
         uint256 modified;
         uint256 dealId; // immutable after AwaitingAcceptance
+        bytes32 dealHash; // immutable after AwaitingAcceptance
         string reasonNote; // immutable after AwaitingAcceptance
-        string requesterId; // immutable after AwaitingAcceptance
+        bytes32 requesterId; // immutable after AwaitingAcceptance
         address requesterAddress; // immutable after AwaitingAcceptance
         uint256 requesterStaked; // immutable after AwaitingAcceptance
-        string respondentId; // immutable after AwaitingAcceptance
+        bytes32 respondentId; // immutable after AwaitingAcceptance
         address respondentAddress; // immutable after Accepted
         uint256 respondentStaked; // immutable after Accepted
         string resolutionNote; // immutable after Resolved
@@ -93,13 +94,15 @@ contract MonethaClaimHandler is Restricted, Pausable, CanReclaimEther, CanReclai
     */
     function create(
         uint256 _dealId,
+        bytes32 _dealHash,
         string _reasonNote,
-        string _requesterId,
-        string _respondentId
+        bytes32 _requesterId,
+        bytes32 _respondentId
     ) external whenNotPaused {
         require(bytes(_reasonNote).length > 0, "reason note must not be empty");
-        require(bytes(_requesterId).length > 0, "requester ID must not be empty");
-        require(bytes(_respondentId).length > 0, "respondent ID must not be empty");
+        require(_dealHash != bytes32(0), "deal hash must be non-zero");
+        require(_requesterId != bytes32(0), "requester ID must be non-zero");
+        require(_respondentId != bytes32(0), "respondent ID must be non-zero");
         require(keccak256(abi.encodePacked(_requesterId)) != keccak256(abi.encodePacked(_respondentId)),
             "requester and respondent must be different");
 
@@ -111,6 +114,7 @@ contract MonethaClaimHandler is Restricted, Pausable, CanReclaimEther, CanReclai
             state : State.AwaitingAcceptance,
             modified : now,
             dealId : _dealId,
+            dealHash: _dealHash,
             reasonNote : _reasonNote,
             requesterId : _requesterId,
             requesterAddress : msg.sender,
