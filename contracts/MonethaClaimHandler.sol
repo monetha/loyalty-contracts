@@ -114,7 +114,7 @@ contract MonethaClaimHandler is Restricted, Pausable, CanReclaimEther, CanReclai
             state : State.AwaitingAcceptance,
             modified : now,
             dealId : _dealId,
-            dealHash: _dealHash,
+            dealHash : _dealHash,
             reasonNote : _reasonNote,
             requesterId : _requesterId,
             requesterAddress : msg.sender,
@@ -173,9 +173,7 @@ contract MonethaClaimHandler is Restricted, Pausable, CanReclaimEther, CanReclai
         claim.respondentStaked = 0;
         claim.resolutionNote = _resolutionNote;
 
-        if (respStakedBefore > 0) {
-            token.safeTransfer(msg.sender, respStakedBefore);
-        }
+        token.safeTransfer(msg.sender, respStakedBefore);
 
         emit ClaimResolved(claim.dealId, _claimIdx);
     }
@@ -217,9 +215,8 @@ contract MonethaClaimHandler is Restricted, Pausable, CanReclaimEther, CanReclai
         claim.state = State.ClosedAfterAcceptanceExpired;
         claim.modified = now;
         claim.requesterStaked = 0;
-        if (stakedBefore > 0) {
-            token.safeTransfer(msg.sender, stakedBefore);
-        }
+
+        token.safeTransfer(msg.sender, stakedBefore);
 
         emit ClaimClosedAfterAcceptanceExpired(claim.dealId, _claimIdx);
     }
@@ -237,9 +234,7 @@ contract MonethaClaimHandler is Restricted, Pausable, CanReclaimEther, CanReclai
         claim.requesterStaked = 0;
         claim.respondentStaked = 0;
 
-        if (totalStaked > 0) {
-            token.safeTransfer(msg.sender, totalStaked);
-        }
+        token.safeTransfer(msg.sender, totalStaked);
 
         emit ClaimClosedAfterResolutionExpired(claim.dealId, _claimIdx);
     }
@@ -259,9 +254,8 @@ contract MonethaClaimHandler is Restricted, Pausable, CanReclaimEther, CanReclai
 
         uint256 stakedBefore = claim.requesterStaked;
         claim.requesterStaked = 0;
-        if (stakedBefore > 0) {
-            token.safeTransfer(msg.sender, stakedBefore);
-        }
+
+        token.safeTransfer(msg.sender, stakedBefore);
 
         if (expired) {
             emit ClaimClosedAfterConfirmationExpired(claim.dealId, _claimIdx);

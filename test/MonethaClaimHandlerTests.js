@@ -452,7 +452,7 @@ contract('MonethaClaimHandler', function (accounts) {
             await token.approve(claimHandler.address, requesterStake, {from: REQUESTER});
             await claimHandler.accept(claimId, {from: REQUESTER}).should.be.rejectedWith(Revert); // not respondent
 
-            await token.approve(claimHandler.address, requesterStake - 1, {from: RESPONDENT});
+            await token.approve(claimHandler.address, requesterStake - MIN_STAKE, {from: RESPONDENT});
             await claimHandler.accept(claimId, {from: RESPONDENT}).should.be.rejectedWith(Revert); // not equal to requester stake
 
             await token.approve(claimHandler.address, requesterStake + MIN_STAKE, {from: RESPONDENT}); // only amount of `requesterStake` should be staked
