@@ -83,6 +83,7 @@ contract('MonethaClaimHandler', function (accounts) {
             // act
             const tx = await claimHandler.create(dealID, reasonNote, requesterId, respondentId, {from: REQUESTER});
             const txTimestamp = web3.eth.getBlock(tx.receipt.blockNumber).timestamp;
+            console.log("\tcreate, gas used:", tx.receipt.gasUsed);
 
             // assert
             // claims count
@@ -167,6 +168,7 @@ contract('MonethaClaimHandler', function (accounts) {
 
             const tx = await claimHandler.close(claimId, {from: REQUESTER});
             const txTimestamp = web3.eth.getBlock(tx.receipt.blockNumber).timestamp;
+            console.log("\tclose, gas used:", tx.receipt.gasUsed);
 
             // assert
 
@@ -252,6 +254,7 @@ contract('MonethaClaimHandler', function (accounts) {
 
             const tx = await claimHandler.close(claimId, {from: REQUESTER});
             const txTimestamp = web3.eth.getBlock(tx.receipt.blockNumber).timestamp;
+            console.log("\tclose, gas used:", tx.receipt.gasUsed);
 
             // assert
 
@@ -316,6 +319,7 @@ contract('MonethaClaimHandler', function (accounts) {
 
             const tx = await claimHandler.close(claimId, {from: REQUESTER});
             const txTimestamp = web3.eth.getBlock(tx.receipt.blockNumber).timestamp;
+            console.log("\tclose, gas used:", tx.receipt.gasUsed);
 
             // assert
 
@@ -378,6 +382,7 @@ contract('MonethaClaimHandler', function (accounts) {
 
             const tx = await claimHandler.close(claimId, {from: REQUESTER});
             const txTimestamp = web3.eth.getBlock(tx.receipt.blockNumber).timestamp;
+            console.log("\tclose, gas used:", tx.receipt.gasUsed);
 
             // assert
 
@@ -435,6 +440,7 @@ contract('MonethaClaimHandler', function (accounts) {
             await token.approve(claimHandler.address, MIN_STAKE, {from: RESPONDENT});
             const tx = await claimHandler.accept(claimId, {from: RESPONDENT});
             const txTimestamp = web3.eth.getBlock(tx.receipt.blockNumber).timestamp;
+            console.log("\taccept, gas used:", tx.receipt.gasUsed);
 
             // assert
 
@@ -497,6 +503,7 @@ contract('MonethaClaimHandler', function (accounts) {
 
             const tx = await claimHandler.resolve(claimId, resolutionNote, {from: RESPONDENT});
             const txTimestamp = web3.eth.getBlock(tx.receipt.blockNumber).timestamp;
+            console.log("\tresolve, gas used:", tx.receipt.gasUsed);
 
             // assert
 
@@ -543,6 +550,7 @@ contract('MonethaClaimHandler', function (accounts) {
             await claimHandler.setMinStake(newMinStake, {from: OTHER}).should.be.rejectedWith(Revert);
 
             const tx = await claimHandler.setMinStake(newMinStake, {from: MONETHA_ACCOUNT});
+            console.log("\tsetMinStake, gas used:", tx.receipt.gasUsed);
 
             // assert
 
