@@ -43,3 +43,18 @@ addons:
       - ${ARTIFACT_NAME}.${ARTIFACT_EXT}
     target_paths:
       - /${TRAVIS_REPO_SLUG}/${TRAVIS_COMMIT}
+
+before_deploy:
+  - cp ${ARTIFACTS_DIR}/${ARTIFACT_NAME}.${ARTIFACT_EXT} ${ARTIFACTS_DIR}/${ARTIFACT_NAME}-${TRAVIS_TAG}.${ARTIFACT_EXT}
+
+deploy:
+  provider: releases
+  api_key:
+    secure: atzgBAVy1bws12yuDcZcCXRo+r44d4bWT9qp2cocCG6CNpCE3n0e3uKhC2gWfdvjTvPIMEdwu8XdH8zaEhcDpry/uXrSabHnr1ay0OXEIY0BnyDhwqHX9OdYSjKGzUPIkQUsLOF9BRWlo+Fl8z2OdhSWh1QUp+JB8CcV8lEz278Sc5UlQJlaejIUO4nWQ1F9VMYxlxAp9Xpm1rkCHFCcfQl8o2Ms3V0VqXvKiFL0JCY06J/Y5ooD+Cm1QECZC4INgUh0J8a1nLOGK5KgOPYj6mU38CHXRfZvN6O6Ko8EsHx4fGyCLWnDyHLZpZx+j5V+JgnTFbJfCPzHRAxSV/RrBevpSsmqBw7Y+GWpoEI0DGMI9cKAaytsiMQ32phIWDVfXExdH10ovF5fl16R/FUXI7WKPee+et+zPLsQ2yk4okkqKjEWq8Y8691BTy89VhXGyMPwoiBGpcV+IdQ2KYaDOmq+Ohn/IKbpweOmNjhtpj4YYnAFN5nm3HXbNaxG19Nsl7cdLOFc54qOLCtUJmDKTUSvopHZ1+448sZiiQJj7qe+Fdod2Xo2KPMF0c9eWCuusDUDJNrRye5SV8lMJhLXipDiA+hRRCeIYs5kfWsKZ6ehheAqZ0jhxhYRpmDqTooTk0mL1l54D6yBrnJX2E3ykQ5qBJ1CweCHzZpUNUNxvKI=
+  file: ${ARTIFACTS_DIR}/${ARTIFACT_NAME}-${TRAVIS_TAG}.${ARTIFACT_EXT}
+  skip_cleanup: true
+  overwrite: true
+  draft: true
+  on:
+    repo: ${TRAVIS_REPO_SLUG}
+    tags: true
