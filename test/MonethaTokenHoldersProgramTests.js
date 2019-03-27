@@ -3,8 +3,8 @@ import Revert from "./helpers/VMExceptionRevert";
 
 import {duration, increaseTimeTo} from "./helpers/increaseTime";
 
-const { shouldBehaveLikeCanReclaimEther } = require('./CanReclaimEther.behavior');
-const { shouldBehaveLikeCanReclaimTokens } = require('./CanReclaimTokens.behavior');
+const {shouldBehaveLikeCanReclaimEther} = require('../node_modules/monetha-utility-contracts/test/CanReclaimEther.behavior');
+const {shouldBehaveLikeCanReclaimTokens} = require('../node_modules/monetha-utility-contracts/test/CanReclaimTokens.behavior');
 
 const {BigNumber} = require('./helpers/setup');
 const expectEvent = require('./helpers/expectEvent');
@@ -31,12 +31,12 @@ contract('MonethaTokenHoldersProgram', function (accounts) {
 
     let tokenHolder, token, vouchers;
     let dateTime;
-    
+
     before(async () => {
         dateTime = await DateTimeMock.new();
 
         token = await Token.new();
-        
+
         vouchers = await MonethaVoucher.new(
             voucherMthRate,
             mthEthRate,
@@ -57,12 +57,12 @@ contract('MonethaTokenHoldersProgram', function (accounts) {
         await tokenHolder.transferOwnership(OWNER);
 
         await token.mint(vouchers.address, tokenToMint);
-        
-        await tokenHolder.sendTransaction({from:VOUCHER,value:value});
-        await tokenHolder.sendTransaction({from:VOUCHER2,value:value});
 
-        await vouchers.sendTransaction({from:VOUCHER,value:value});
-        await vouchers.sendTransaction({from:VOUCHER2,value:value});
+        await tokenHolder.sendTransaction({from: VOUCHER, value: value});
+        await tokenHolder.sendTransaction({from: VOUCHER2, value: value});
+
+        await vouchers.sendTransaction({from: VOUCHER, value: value});
+        await vouchers.sendTransaction({from: VOUCHER2, value: value});
 
         advanceBlock();
     });
@@ -77,7 +77,7 @@ contract('MonethaTokenHoldersProgram', function (accounts) {
         const balanceBefore = new BigNumber(web3.eth.getBalance(tokenHolder.address));
 
         const tx = await tokenHolder.buyVouchers({from: VOUCHER2});
-        
+
         expectEvent.inLogs(tx.logs, "VouchersPurchased", {
             vouchers: vouchersBought,
             weis: vouchersWei,
@@ -99,7 +99,7 @@ contract('MonethaTokenHoldersProgram', function (accounts) {
         const balanceBefore = new BigNumber(web3.eth.getBalance(tokenHolder.address));
 
         const res = await tokenHolder.sellVouchers({from: VOUCHER2});
-    
+
         expectEvent.inLogs(res.logs, "VouchersSold", {
             vouchers: vouchersBought,
             weis: vouchersWei,
@@ -118,16 +118,16 @@ contract('MonethaTokenHoldersProgram', function (accounts) {
 
     it('should be able to buy vouchers successfully', async () => {
         const tx = await tokenHolder.buyVouchers({from: VOUCHER2});
-        
+
         expectEvent.inLogs(tx.logs, "VouchersPurchased", {
             vouchers: vouchersBought,
             weis: vouchersWei,
         });
     });
-    
+
     it('should check if users are allowed to participate in program', async () => {
         let participateFromTimestamp = await tokenHolder.participateFromTimestamp();
-        
+
         await increaseTimeTo(participateFromTimestamp);
 
         const res = await tokenHolder.isAllowedToParticipateNow();
@@ -172,8 +172,8 @@ contract('MonethaTokenHoldersProgram', function (accounts) {
     });
 
     it('should check if users are allowed redeem', async () => {
-        let participateFromTimestamp= await tokenHolder.participateFromTimestamp();
-        
+        let participateFromTimestamp = await tokenHolder.participateFromTimestamp();
+
         await increaseTimeTo(participateFromTimestamp.add(duration.days(1)).add(duration.minutes(35)));
 
         const res = await tokenHolder.isAllowedToRedeemNow();
@@ -216,7 +216,7 @@ contract('MonethaTokenHoldersProgram', function (accounts) {
     it('should not allow either to participate or redeem within 30 minutes before next month start', async () => {
         // calculating 15 min before next month start
         let fromTimestamp = await tokenHolder.participateFromTimestamp();
-        let [y, m, ] = await dateTime.toDate(fromTimestamp);
+        let [y, m,] = await dateTime.toDate(fromTimestamp);
         m = m.add(1);
         if (m > 12) {
             m = new BigNumber(1);
@@ -231,17 +231,17 @@ contract('MonethaTokenHoldersProgram', function (accounts) {
     });
 
     it('should be able to cancel participation by holder successfully', async () => {
-        await tokenHolder.sendTransaction({from:VOUCHER,value:value});
-        await tokenHolder.sendTransaction({from:VOUCHER2,value:value});
-        
+        await tokenHolder.sendTransaction({from: VOUCHER, value: value});
+        await tokenHolder.sendTransaction({from: VOUCHER2, value: value});
+
         const tx = await tokenHolder.buyVouchers({from: VOUCHER2});
-        
+
         expectEvent.inLogs(tx.logs, "VouchersPurchased", {
             vouchers: vouchersBought,
             weis: vouchersWei,
         });
 
-        let participateFromTimestamp= await tokenHolder.participateFromTimestamp();
+        let participateFromTimestamp = await tokenHolder.participateFromTimestamp();
         await increaseTimeTo(participateFromTimestamp);
 
         await token.mint(OTHER, 1000);
@@ -253,7 +253,7 @@ contract('MonethaTokenHoldersProgram', function (accounts) {
         const vouchersBefore = await vouchers.balanceOf(OTHER);
 
         const cancel = await tokenHolder.cancelParticipation({from: OTHER});
-        
+
         expectEvent.inLogs(cancel.logs, "ParticipationStopped", {
             participant: OTHER,
             mthTokens: tokensToStake,

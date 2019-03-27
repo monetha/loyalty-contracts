@@ -3,8 +3,8 @@ import Revert from "./helpers/VMExceptionRevert";
 
 import increaseTime, {duration} from "./helpers/increaseTime";
 
-const {shouldBehaveLikeCanReclaimEther} = require('./CanReclaimEther.behavior');
-const {shouldBehaveLikeCanReclaimTokens} = require('./CanReclaimTokens.behavior');
+const {shouldBehaveLikeCanReclaimEther} = require('../node_modules/monetha-utility-contracts/test/CanReclaimEther.behavior');
+const {shouldBehaveLikeCanReclaimTokens} = require('../node_modules/monetha-utility-contracts/test/CanReclaimTokens.behavior');
 
 const {BigNumber} = require('./helpers/setup');
 const expectEvent = require('./helpers/expectEvent');

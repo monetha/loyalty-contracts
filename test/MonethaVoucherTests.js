@@ -1,5 +1,5 @@
-const { shouldBehaveLikeCanReclaimEther } = require('./CanReclaimEther.behavior');
-const { shouldBehaveLikeCanReclaimTokens } = require('./CanReclaimTokens.behavior');
+const {shouldBehaveLikeCanReclaimEther} = require('../node_modules/monetha-utility-contracts/test/CanReclaimEther.behavior');
+const {shouldBehaveLikeCanReclaimTokens} = require('../node_modules/monetha-utility-contracts/test/CanReclaimTokens.behavior');
 
 import {advanceBlock} from "./helpers/advanceToBlock";
 import Revert from "./helpers/VMExceptionRevert";
@@ -39,7 +39,7 @@ contract('MonethaVoucher', function (accounts) {
             mthEthRate,
             token.address
         );
-        
+
         await vouchers.setMonethaAddress(VOUCHER, true);
         await vouchers.setMonethaAddress(VOUCHER2, true);
         await vouchers.transferOwnership(OWNER);
@@ -128,7 +128,7 @@ contract('MonethaVoucher', function (accounts) {
     it('should not apply discount if vouchers released is 0', async () => {
         let prevUserBal = await vouchers.balanceOf(OTHER1);
         const prevUserBalEth = new BigNumber(web3.eth.getBalance(OTHER1));
-        
+
         const tx = await vouchers.applyDiscount(OTHER1, 1, {from: VOUCHER2});
 
         let newUserBalance = await vouchers.balanceOf(OTHER1);
@@ -163,8 +163,8 @@ contract('MonethaVoucher', function (accounts) {
     it('should be able to sell Vouchers', async () => {
         const userDistributedVoucher = await vouchers.purchasedBy(VOUCHER2);
 
-        var res = await vouchers.sellVouchers(userDistributedVoucher, { from: VOUCHER2 })
-       
+        var res = await vouchers.sellVouchers(userDistributedVoucher, {from: VOUCHER2})
+
         expectEvent.inLogs(res.logs, "VouchersSold", {
             user: VOUCHER2,
             vouchersSold: 5,
