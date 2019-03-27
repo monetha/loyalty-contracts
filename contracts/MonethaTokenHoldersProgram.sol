@@ -8,8 +8,8 @@ import "openzeppelin-solidity/contracts/token/ERC20/SafeERC20.sol";
 import "./IMonethaVoucher.sol";
 import "monetha-utility-contracts/contracts/Restricted.sol";
 import "monetha-utility-contracts/contracts/DateTime.sol";
-import "./ownership/CanReclaimEther.sol";
-import "./ownership/CanReclaimTokens.sol";
+import "monetha-utility-contracts/contracts/ownership/CanReclaimEther.sol";
+import "monetha-utility-contracts/contracts/ownership/CanReclaimTokens.sol";
 
 
 contract MonethaTokenHoldersProgram is Restricted, Pausable, CanReclaimEther, CanReclaimTokens {
