@@ -97,7 +97,8 @@ contract MonethaClaimHandler is Restricted, Pausable, CanReclaimEther, CanReclai
         bytes32 _dealHash,
         string _reasonNote,
         bytes32 _requesterId,
-        bytes32 _respondentId
+        bytes32 _respondentId,
+        uint256 _amountToStake
     ) external whenNotPaused {
         require(bytes(_reasonNote).length > 0, "reason note must not be empty");
         require(_dealHash != bytes32(0), "deal hash must be non-zero");
@@ -105,10 +106,11 @@ contract MonethaClaimHandler is Restricted, Pausable, CanReclaimEther, CanReclai
         require(_respondentId != bytes32(0), "respondent ID must be non-zero");
         require(keccak256(abi.encodePacked(_requesterId)) != keccak256(abi.encodePacked(_respondentId)),
             "requester and respondent must be different");
+        require(_amountToStake >= minStake, "amount to stake must be greater or equal to min.stake");
 
-        uint256 requesterStaked = token.allowance(msg.sender, address(this));
-        require(requesterStaked >= minStake, "min. stake allowance needed");
-        token.safeTransferFrom(msg.sender, address(this), requesterStaked);
+        uint256 requesterAllowance = token.allowance(msg.sender, address(this));
+        require(requesterAllowance >= _amountToStake, "allowance too small");
+        token.safeTransferFrom(msg.sender, address(this), _amountToStake);
 
         Claim memory claim = Claim({
             state : State.AwaitingAcceptance,
@@ -118,7 +120,7 @@ contract MonethaClaimHandler is Restricted, Pausable, CanReclaimEther, CanReclai
             reasonNote : _reasonNote,
             requesterId : _requesterId,
             requesterAddress : msg.sender,
-            requesterStaked : requesterStaked,
+            requesterStaked : _amountToStake,
             respondentId : _respondentId,
             respondentAddress : address(0),
             respondentStaked : 0,

@@ -75,15 +75,16 @@ contract('MonethaClaimHandler', function (accounts) {
             const reasonNote = "reason note";
             const requesterId = "0x3132333435363738393031323334353600000000000000000000000000000000";
             const respondentId = "0x3635343332313039383736353433323100000000000000000000000000000000";
+            const amountToStake = MIN_STAKE;
 
-            await token.approve(claimHandler.address, MIN_STAKE, {from: REQUESTER});
+            await token.approve(claimHandler.address, 2 * amountToStake, {from: REQUESTER}); // approve more than needed to test amountToStake parameter
 
             const requesterBalance = new BigNumber(await token.balanceOf(REQUESTER));
             const claimHandlerBalance = new BigNumber(await token.balanceOf(claimHandler.address));
             const count = new BigNumber(await claimHandler.getClaimsCount());
 
             // act
-            const tx = await claimHandler.create(dealID, dealHash, reasonNote, requesterId, respondentId, {from: REQUESTER});
+            const tx = await claimHandler.create(dealID, dealHash, reasonNote, requesterId, respondentId, amountToStake, {from: REQUESTER});
             const txTimestamp = web3.eth.getBlock(tx.receipt.blockNumber).timestamp;
             console.log("\tcreate, gas used:", tx.receipt.gasUsed);
 
@@ -100,9 +101,9 @@ contract('MonethaClaimHandler', function (accounts) {
 
             // MTH staked
             const requesterBalance2 = new BigNumber(await token.balanceOf(REQUESTER));
-            requesterBalance2.should.be.bignumber.equal(requesterBalance.sub(MIN_STAKE));
+            requesterBalance2.should.be.bignumber.equal(requesterBalance.sub(amountToStake));
             const claimHandlerBalance2 = new BigNumber(await token.balanceOf(claimHandler.address));
-            claimHandlerBalance2.should.be.bignumber.equal(claimHandlerBalance.add(MIN_STAKE));
+            claimHandlerBalance2.should.be.bignumber.equal(claimHandlerBalance.add(amountToStake));
 
             // claim state
             const claim = await claimHandler.claims(count);
@@ -114,7 +115,7 @@ contract('MonethaClaimHandler', function (accounts) {
             assert.equal(claim[FieldReasonNote], reasonNote);
             assert.equal(claim[FieldRequesterId], requesterId);
             assert.equal(claim[FieldRequesterAddress], REQUESTER);
-            claim[FieldRequesterStaked].should.be.bignumber.equal(MIN_STAKE);
+            claim[FieldRequesterStaked].should.be.bignumber.equal(amountToStake);
             assert.equal(claim[FieldRespondentId], respondentId);
             assert.equal(claim[FieldRespondentAddress], 0x0);
             claim[FieldRespondentStaked].should.be.bignumber.equal(0);
@@ -135,7 +136,7 @@ contract('MonethaClaimHandler', function (accounts) {
             await token.approve(claimHandler.address, MIN_STAKE, {from: REQUESTER});
 
             const claimId = new BigNumber(await claimHandler.getClaimsCount());
-            await claimHandler.create(dealID, dealHash, reasonNote, requesterId, respondentId, {from: REQUESTER});
+            await claimHandler.create(dealID, dealHash, reasonNote, requesterId, respondentId, MIN_STAKE, {from: REQUESTER});
 
             // act
             await claimHandler.close(claimId, {from: REQUESTER}).should.be.rejectedWith(Revert);
@@ -158,7 +159,7 @@ contract('MonethaClaimHandler', function (accounts) {
             await token.approve(claimHandler.address, MIN_STAKE, {from: REQUESTER});
 
             const claimId = new BigNumber(await claimHandler.getClaimsCount());
-            await claimHandler.create(dealID, dealHash, reasonNote, requesterId, respondentId, {from: REQUESTER});
+            await claimHandler.create(dealID, dealHash, reasonNote, requesterId, respondentId, MIN_STAKE, {from: REQUESTER});
 
             await increaseTime(duration.hours(72));
 
@@ -217,7 +218,7 @@ contract('MonethaClaimHandler', function (accounts) {
             await token.approve(claimHandler.address, MIN_STAKE, {from: REQUESTER});
 
             const claimId = new BigNumber(await claimHandler.getClaimsCount());
-            await claimHandler.create(dealID, dealHash, reasonNote, requesterId, respondentId, {from: REQUESTER});
+            await claimHandler.create(dealID, dealHash, reasonNote, requesterId, respondentId, MIN_STAKE, {from: REQUESTER});
 
             await token.approve(claimHandler.address, MIN_STAKE, {from: RESPONDENT});
             await claimHandler.accept(claimId, {from: RESPONDENT});
@@ -243,7 +244,7 @@ contract('MonethaClaimHandler', function (accounts) {
             await token.approve(claimHandler.address, MIN_STAKE, {from: REQUESTER});
 
             const claimId = new BigNumber(await claimHandler.getClaimsCount());
-            await claimHandler.create(dealID, dealHash, reasonNote, requesterId, respondentId, {from: REQUESTER});
+            await claimHandler.create(dealID, dealHash, reasonNote, requesterId, respondentId, MIN_STAKE, {from: REQUESTER});
 
             await token.approve(claimHandler.address, MIN_STAKE, {from: RESPONDENT});
             await claimHandler.accept(claimId, {from: RESPONDENT});
@@ -309,7 +310,7 @@ contract('MonethaClaimHandler', function (accounts) {
             await token.approve(claimHandler.address, MIN_STAKE, {from: REQUESTER});
 
             const claimId = new BigNumber(await claimHandler.getClaimsCount());
-            await claimHandler.create(dealID, dealHash, reasonNote, requesterId, respondentId, {from: REQUESTER});
+            await claimHandler.create(dealID, dealHash, reasonNote, requesterId, respondentId, MIN_STAKE, {from: REQUESTER});
 
             await token.approve(claimHandler.address, MIN_STAKE, {from: RESPONDENT});
             await claimHandler.accept(claimId, {from: RESPONDENT});
@@ -374,7 +375,7 @@ contract('MonethaClaimHandler', function (accounts) {
             await token.approve(claimHandler.address, MIN_STAKE, {from: REQUESTER});
 
             const claimId = new BigNumber(await claimHandler.getClaimsCount());
-            await claimHandler.create(dealID, dealHash, reasonNote, requesterId, respondentId, {from: REQUESTER});
+            await claimHandler.create(dealID, dealHash, reasonNote, requesterId, respondentId, MIN_STAKE, {from: REQUESTER});
 
             await token.approve(claimHandler.address, MIN_STAKE, {from: RESPONDENT});
             await claimHandler.accept(claimId, {from: RESPONDENT});
@@ -442,7 +443,7 @@ contract('MonethaClaimHandler', function (accounts) {
             await token.approve(claimHandler.address, requesterStake, {from: REQUESTER});
 
             const claimId = new BigNumber(await claimHandler.getClaimsCount());
-            await claimHandler.create(dealID, dealHash, reasonNote, requesterId, respondentId, {from: REQUESTER});
+            await claimHandler.create(dealID, dealHash, reasonNote, requesterId, respondentId, requesterStake, {from: REQUESTER});
             await increaseTime(duration.hours(71) + duration.minutes(59));
 
             const respondentBalance = new BigNumber(await token.balanceOf(RESPONDENT));
@@ -506,7 +507,7 @@ contract('MonethaClaimHandler', function (accounts) {
             await token.approve(claimHandler.address, MIN_STAKE, {from: REQUESTER});
 
             const claimId = new BigNumber(await claimHandler.getClaimsCount());
-            await claimHandler.create(dealID, dealHash, reasonNote, requesterId, respondentId, {from: REQUESTER});
+            await claimHandler.create(dealID, dealHash, reasonNote, requesterId, respondentId, MIN_STAKE, {from: REQUESTER});
 
             await token.approve(claimHandler.address, MIN_STAKE, {from: RESPONDENT});
             await claimHandler.accept(claimId, {from: RESPONDENT});
